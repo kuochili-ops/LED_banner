@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 質感光暈版</title>
+    <title>白六 LED 跑馬燈 - 最終修正版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -110,7 +110,9 @@
     function renderBuffer() {
         const h = settings.density;
         const fontSize = h * 0.98; 
-        const fontStr = `900 ${fontSize}px "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif`;
+        // 🚀 關鍵修正：多重黑體備援 + 900 極粗體
+        const fontStr = `900 ${fontSize}px "PingFang TC", "Hiragino Sans GB", "Microsoft JhengHei", "Noto Sans TC", sans-serif`;
+        
         octx.font = mctx.font = fontStr;
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
@@ -123,13 +125,17 @@
 
         octx.clearRect(0, 0, contentWidth, h);
         mctx.clearRect(0, 0, contentWidth, h);
+        
+        octx.font = mctx.font = fontStr; // 再次指定確保載入
+        octx.textBaseline = mctx.textBaseline = "middle";
+        
         let curX = 50;
         if (settings.img) {
             const drawH = h * settings.imgScale;
             octx.drawImage(settings.img, curX + settings.imgX, (h - drawH) / 2 + settings.imgY, imgW, drawH);
             curX += imgW + 50;
         }
-        octx.textBaseline = mctx.textBaseline = "middle";
+        
         octx.fillStyle = "white"; 
         octx.fillText(settings.text, curX, h / 2);
         mctx.fillStyle = "#FF00FF"; 
@@ -159,16 +165,15 @@
                         const r = imgD[i], g = imgD[i+1], b = imgD[i+2];
                         const isT = (maskD[i] > 200 && maskD[i+2] > 200 && maskD[i+1] < 50) && (Math.abs(r-g) < 15 && Math.abs(g-b) < 15);
                         
-                        // 🌈 顏色計算
                         const clr = isT ? `rgb(${targetColor.r},${targetColor.g},${targetColor.b})` : `rgb(${r},${g},${b})`;
                         
-                        // ✨ 1. 底層同色擴散層 (低透明度，範圍稍大)
-                        ctx.fillStyle = clr.replace('rgb', 'rgba').replace(')', ', 0.3)');
+                        // ✨ 優化光暈：底層同色 25% 透明度，稍微發散
+                        ctx.fillStyle = clr.replace('rgb', 'rgba').replace(')', ', 0.25)');
                         ctx.beginPath();
                         ctx.arc(px + step/2, py + step/2, dotS * 0.7, 0, Math.PI * 2);
                         ctx.fill();
 
-                        // ✨ 2. 核心燈珠層 (實色)
+                        // ✨ 核心燈珠
                         ctx.fillStyle = clr;
                         ctx.beginPath();
                         ctx.arc(px + step/2, py + step/2, dotS/2, 0, Math.PI * 2);
@@ -178,9 +183,7 @@
             }
         }
         settings.offset -= settings.speed;
-        if (isRecording && settings.offset < -(offscreen.width * step)) {
-            stopRecording();
-        }
+        if (isRecording && settings.offset < -(offscreen.width * step)) stopRecording();
         if (settings.offset < -(offscreen.width * step)) settings.offset = V_WIDTH;
         requestAnimationFrame(draw);
     }
