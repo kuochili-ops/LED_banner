@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 比例優化版</title>
+    <title>白六 LED 跑馬燈 - 原色保護版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "PingFang TC", sans-serif; color: #fff; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "PingFang TC", "Apple Color Emoji", sans-serif; color: #fff; }
         body { display: flex; flex-direction: column; }
         #display-container { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
         canvas { aspect-ratio: 16 / 9; width: 100% !important; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
@@ -34,37 +34,37 @@
     <div id="download-overlay">
         <div class="modal">
             <h2 style="margin:0 0 10px 0; color:var(--accent-green);">白六 LED</h2>
-            <p id="statusMsg" style="color:#aaa; font-size:14px; margin-bottom:20px;">自動錄製已完成</p>
-            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">下載影片 (MP4)</button>
+            <p id="statusMsg" style="color:#aaa; font-size:14px; margin-bottom:20px;">自動錄製已完成並儲存</p>
+            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">再次下載影片 (MP4)</button>
             <button onclick="closeModal()" style="background:none; color:#666; border:none; font-size:13px;">關閉</button>
         </div>
     </div>
 </div>
 
 <div id="controls">
-    <div class="section-title">文字內容</div>
+    <div class="section-title">內容設定</div>
     <div class="input-row">
-        <input type="text" id="textInput" value="白六 LED 跑馬燈測試 ❤️">
+        <input type="text" id="textInput" value="白六 LED 🎨 🚀 🐶">
         <button class="btn" onclick="updateText()">更新</button>
         <button id="autoRecordBtn" class="btn" onclick="startAutoRecording()">自動錄影</button>
     </div>
 
     <div class="image-tools">
         <div class="input-row" style="margin-bottom:10px;">
-            <label class="btn" style="flex:1; background:#333; text-align:center;">選擇圖片<input type="file" id="imageInput" accept="image/*" hidden onchange="handleImage(this)"></label>
+            <label class="btn" style="flex:1; background:#333; text-align:center;">插入圖片<input type="file" id="imageInput" accept="image/*" hidden onchange="handleImage(this)"></label>
             <button class="btn" style="background:#222;" onclick="resetImage()">清除</button>
         </div>
         <div class="settings-grid">
-            <div style="display:flex; flex-direction:column;"><label>圖片縮放 (相對於文字)</label><input type="range" id="imgScale" min="0.5" max="4" step="0.1" value="1.5" oninput="updateSettings()"></div>
-            <div style="display:flex; flex-direction:column;"><label>左右位移 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
-            <div style="display:flex; flex-direction:column;"><label>上下位移 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
+            <div style="display:flex; flex-direction:column;"><label>圖片縮放 (2字寬基準)</label><input type="range" id="imgScale" min="0.5" max="4" step="0.1" value="1.8" oninput="updateSettings()"></div>
+            <div style="display:flex; flex-direction:column;"><label>水平位移 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
+            <div style="display:flex; flex-direction:column;"><label>垂直位移 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
         </div>
     </div>
 
     <div class="settings-grid">
-        <div style="display:flex; flex-direction:column;"><label>滾動速度</label><input type="range" id="speedRange" min="5" max="40" value="20" oninput="updateSettings()"></div>
-        <div style="display:flex; flex-direction:column;"><label>點陣密度 (字體大小)</label><input type="range" id="pixelRange" min="40" max="120" value="70" oninput="updateSettings()"></div>
-        <div style="display:flex; flex-direction:column;"><label>燈珠顏色</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%; height:25px; background:none; border:none;"></div>
+        <div style="display:flex; flex-direction:column;"><label>滾動速度</label><input type="range" id="speedRange" min="5" max="50" value="25" oninput="updateSettings()"></div>
+        <div style="display:flex; flex-direction:column;"><label>點陣密度</label><input type="range" id="pixelRange" min="40" max="120" value="75" oninput="updateSettings()"></div>
+        <div style="display:flex; flex-direction:column;"><label>文字顏色 (Emoji除外)</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%; height:25px; background:none; border:none;"></div>
         <div style="display:flex; flex-direction:column;"><label>燈珠大小</label><input type="range" id="sizeRange" min="0.2" max="1" step="0.05" value="0.75" oninput="updateSettings()"></div>
     </div>
 </div>
@@ -72,7 +72,7 @@
 <script>
     const canvas = document.getElementById('ledCanvas'), ctx = canvas.getContext('2d', { alpha: false });
     const V_WIDTH = 1280, V_HEIGHT = 720;
-    let settings = { text: "", density: 70, dotScale: 0.75, color: "#00ff00", speed: 20, offset: V_WIDTH, img: null, imgScale: 1.5, imgX: 0, imgY: 0 };
+    let settings = { text: "", density: 75, dotScale: 0.75, color: "#00ff00", speed: 25, offset: V_WIDTH, img: null, imgScale: 1.8, imgX: 0, imgY: 0 };
     
     const offscreen = document.createElement('canvas'), octx = offscreen.getContext('2d');
     const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d');
@@ -90,8 +90,10 @@
             reader.readAsDataURL(input.files[0]);
         }
     }
+
     function resetImage() { settings.img = null; renderBuffer(); }
     function updateText() { settings.text = document.getElementById('textInput').value; renderBuffer(); settings.offset = V_WIDTH; }
+    
     function updateSettings() {
         settings.speed = parseInt(document.getElementById('speedRange').value);
         settings.density = parseInt(document.getElementById('pixelRange').value);
@@ -105,45 +107,46 @@
 
     function renderBuffer() {
         const h = settings.density;
-        const fontSize = h * 0.85; 
-        octx.font = `bold ${fontSize}px sans-serif`;
+        const fontSize = h * 0.85;
+        octx.font = mctx.font = `bold ${fontSize}px "PingFang TC", "Apple Color Emoji", sans-serif`;
         
         let textMetrics = octx.measureText(settings.text);
-        
-        // 核心邏輯修正：圖片寬度基準。
-        // 一個中文字寬度約等於 fontSize。
-        // 我們將圖片的縮放基準設定為：當 imgScale 為 1.0 時，高度等於字體高度。
-        // 為了達到「約兩個中文字寬」，預設的 imgScale 設為 1.5 ~ 2.0 左右會很接近。
         let imgDrawWidth = 0;
         let imgDrawHeight = 0;
 
         if (settings.img) {
             const aspect = settings.img.width / settings.img.height;
-            // 讓圖片高度跟隨字體高度縮放
             imgDrawHeight = fontSize * settings.imgScale;
             imgDrawWidth = imgDrawHeight * aspect;
         }
 
-        let contentWidth = textMetrics.width + 100 + imgDrawWidth + Math.abs(settings.imgX);
-        
+        let contentWidth = textMetrics.width + 150 + imgDrawWidth + Math.abs(settings.imgX);
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
 
-        octx.clearRect(0, 0, contentWidth, h); mctx.clearRect(0, 0, contentWidth, h);
+        octx.clearRect(0, 0, contentWidth, h);
+        mctx.clearRect(0, 0, contentWidth, h);
         
         let curX = 50;
         if (settings.img) {
-            // 垂直置中繪製
             octx.drawImage(settings.img, curX + settings.imgX, (h - imgDrawHeight) / 2 + settings.imgY, imgDrawWidth, imgDrawHeight);
             curX += imgDrawWidth + 50;
         }
 
         octx.textBaseline = mctx.textBaseline = "middle";
-        octx.font = mctx.font = `bold ${fontSize}px sans-serif`;
-        octx.fillStyle = "white"; octx.fillText(settings.text, curX, h / 2);
-        mctx.fillStyle = "#FF00FF"; mctx.fillText(settings.text, curX, h / 2);
+        octx.fillStyle = "white"; 
+        octx.fillText(settings.text, curX, h / 2);
+
+        // 關鍵：在遮罩層用特定純色繪製文字，用來偵測「哪裡是純文字」
+        mctx.fillStyle = "#FF00FF"; 
+        mctx.fillText(settings.text, curX, h / 2);
 
         canvas.width = V_WIDTH; canvas.height = V_HEIGHT;
+    }
+
+    function hexToRgb(hex) {
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
     }
 
     function draw() {
@@ -151,17 +154,33 @@
         const imgD = octx.getImageData(0, 0, offscreen.width, offscreen.height).data;
         const maskD = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
         const step = V_HEIGHT / settings.density, dotS = step * settings.dotScale;
-        const tCol = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(settings.color).map(x => parseInt(x, 16));
+        const targetColor = hexToRgb(settings.color);
 
         for (let y = 0; y < offscreen.height; y++) {
             for (let x = 0; x < offscreen.width; x++) {
                 const i = (y * offscreen.width + x) * 4;
-                if (imgD[i+3] > 80) {
+                const alpha = imgD[i+3];
+
+                if (alpha > 80) {
                     const px = (x * step) + settings.offset, py = y * step;
                     if (px > -step && px < V_WIDTH) {
-                        const isT = (maskD[i] > 200 && maskD[i+2] > 200) && (Math.abs(imgD[i]-imgD[i+1]) < 15);
-                        ctx.fillStyle = isT ? `rgb(${tCol[1]},${tCol[2]},${tCol[3]})` : `rgb(${imgD[i]},${imgD[i+1]},${imgD[i+2]})`;
-                        ctx.beginPath(); ctx.arc(px + step/2, py + step/2, dotS/2, 0, 7); ctx.fill();
+                        const r = imgD[i], g = imgD[i+1], b = imgD[i+2];
+                        const mr = maskD[i], mg = maskD[i+1], mb = maskD[i+2];
+
+                        // 原色保護判斷：
+                        // 1. 遮罩層在該點必須是桃紅色（代表是文字位置）
+                        // 2. 原始層在該點必須是灰階（R=G=B，代表是普通文字而非 Emoji）
+                        const isPlainText = (mr > 200 && mb > 200 && mg < 50) && (Math.abs(r-g) < 15 && Math.abs(g-b) < 15);
+
+                        if (isPlainText) {
+                            ctx.fillStyle = `rgba(${targetColor.r}, ${targetColor.g}, ${targetColor.b}, ${alpha/255})`;
+                        } else {
+                            ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${alpha/255})`;
+                        }
+                        
+                        ctx.beginPath();
+                        ctx.arc(px + step/2, py + step/2, dotS/2, 0, Math.PI * 2);
+                        ctx.fill();
                     }
                 }
             }
@@ -212,10 +231,10 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `白六_LED_Auto_Balanced.mp4`;
+        a.download = `白六_LED_跑馬燈.mp4`;
         a.click();
-        
-        document.getElementById('manualDownloadBtn').onclick = () => { a.click(); };
+        manualBtn = document.getElementById('manualDownloadBtn');
+        manualBtn.onclick = () => { a.click(); };
         document.getElementById('download-overlay').style.display = 'flex';
     }
 
