@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 自動錄製版</title>
+    <title>白六 LED 跑馬燈 - 比例優化版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -15,7 +15,7 @@
         .modal { background: #222; padding: 25px; border-radius: 20px; text-align: center; max-width: 320px; border: 1px solid #444; }
         #controls { background: var(--panel-bg); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #333; overflow-y: auto; max-height: 55%; }
         @media (orientation: landscape) { #controls { display: none; } }
-        .section-title { font-size: 10px; color: #666; letter-spacing: 1px; text-transform: uppercase; }
+        .section-title { font-size: 10px; color: #666; letter-spacing: 1px; }
         .input-row { display: flex; gap: 8px; align-items: center; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; font-size: 16px; outline: none; }
         .btn { padding: 10px 15px; border-radius: 10px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer; font-size: 14px; }
@@ -34,7 +34,7 @@
     <div id="download-overlay">
         <div class="modal">
             <h2 style="margin:0 0 10px 0; color:var(--accent-green);">白六 LED</h2>
-            <p id="statusMsg" style="color:#aaa; font-size:14px; margin-bottom:20px;">影片已自動錄製完成</p>
+            <p id="statusMsg" style="color:#aaa; font-size:14px; margin-bottom:20px;">自動錄製已完成</p>
             <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">下載影片 (MP4)</button>
             <button onclick="closeModal()" style="background:none; color:#666; border:none; font-size:13px;">關閉</button>
         </div>
@@ -44,7 +44,7 @@
 <div id="controls">
     <div class="section-title">文字內容</div>
     <div class="input-row">
-        <input type="text" id="textInput" value="白六 LED 自動錄製測試 ❤️">
+        <input type="text" id="textInput" value="白六 LED 跑馬燈測試 ❤️">
         <button class="btn" onclick="updateText()">更新</button>
         <button id="autoRecordBtn" class="btn" onclick="startAutoRecording()">自動錄影</button>
     </div>
@@ -55,15 +55,15 @@
             <button class="btn" style="background:#222;" onclick="resetImage()">清除</button>
         </div>
         <div class="settings-grid">
-            <div style="display:flex; flex-direction:column;"><label>圖片縮放</label><input type="range" id="imgScale" min="0.1" max="3" step="0.1" value="1" oninput="updateSettings()"></div>
-            <div style="display:flex; flex-direction:column;"><label>水平位移 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
-            <div style="display:flex; flex-direction:column;"><label>垂直位移 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
+            <div style="display:flex; flex-direction:column;"><label>圖片縮放 (相對於文字)</label><input type="range" id="imgScale" min="0.5" max="4" step="0.1" value="1.5" oninput="updateSettings()"></div>
+            <div style="display:flex; flex-direction:column;"><label>左右位移 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
+            <div style="display:flex; flex-direction:column;"><label>上下位移 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
         </div>
     </div>
 
     <div class="settings-grid">
         <div style="display:flex; flex-direction:column;"><label>滾動速度</label><input type="range" id="speedRange" min="5" max="40" value="20" oninput="updateSettings()"></div>
-        <div style="display:flex; flex-direction:column;"><label>點陣密度</label><input type="range" id="pixelRange" min="40" max="120" value="70" oninput="updateSettings()"></div>
+        <div style="display:flex; flex-direction:column;"><label>點陣密度 (字體大小)</label><input type="range" id="pixelRange" min="40" max="120" value="70" oninput="updateSettings()"></div>
         <div style="display:flex; flex-direction:column;"><label>燈珠顏色</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%; height:25px; background:none; border:none;"></div>
         <div style="display:flex; flex-direction:column;"><label>燈珠大小</label><input type="range" id="sizeRange" min="0.2" max="1" step="0.05" value="0.75" oninput="updateSettings()"></div>
     </div>
@@ -72,7 +72,7 @@
 <script>
     const canvas = document.getElementById('ledCanvas'), ctx = canvas.getContext('2d', { alpha: false });
     const V_WIDTH = 1280, V_HEIGHT = 720;
-    let settings = { text: "", density: 70, dotScale: 0.75, color: "#00ff00", speed: 20, offset: V_WIDTH, img: null, imgScale: 1.0, imgX: 0, imgY: 0 };
+    let settings = { text: "", density: 70, dotScale: 0.75, color: "#00ff00", speed: 20, offset: V_WIDTH, img: null, imgScale: 1.5, imgX: 0, imgY: 0 };
     
     const offscreen = document.createElement('canvas'), octx = offscreen.getContext('2d');
     const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d');
@@ -105,25 +105,44 @@
 
     function renderBuffer() {
         const h = settings.density;
-        octx.font = `bold ${h * 0.85}px sans-serif`;
+        const fontSize = h * 0.85; 
+        octx.font = `bold ${fontSize}px sans-serif`;
+        
         let textMetrics = octx.measureText(settings.text);
-        let contentWidth = textMetrics.width + 100;
+        
+        // 核心邏輯修正：圖片寬度基準。
+        // 一個中文字寬度約等於 fontSize。
+        // 我們將圖片的縮放基準設定為：當 imgScale 為 1.0 時，高度等於字體高度。
+        // 為了達到「約兩個中文字寬」，預設的 imgScale 設為 1.5 ~ 2.0 左右會很接近。
+        let imgDrawWidth = 0;
+        let imgDrawHeight = 0;
+
         if (settings.img) {
-            contentWidth += (h * (settings.img.width/settings.img.height) * settings.imgScale) + 50 + Math.abs(settings.imgX);
+            const aspect = settings.img.width / settings.img.height;
+            // 讓圖片高度跟隨字體高度縮放
+            imgDrawHeight = fontSize * settings.imgScale;
+            imgDrawWidth = imgDrawHeight * aspect;
         }
+
+        let contentWidth = textMetrics.width + 100 + imgDrawWidth + Math.abs(settings.imgX);
+        
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
+
         octx.clearRect(0, 0, contentWidth, h); mctx.clearRect(0, 0, contentWidth, h);
+        
         let curX = 50;
         if (settings.img) {
-            let iw = h * (settings.img.width/settings.img.height) * settings.imgScale;
-            octx.drawImage(settings.img, curX + settings.imgX, (h - h*settings.imgScale)/2 + settings.imgY, iw, h*settings.imgScale);
-            curX += iw + 50;
+            // 垂直置中繪製
+            octx.drawImage(settings.img, curX + settings.imgX, (h - imgDrawHeight) / 2 + settings.imgY, imgDrawWidth, imgDrawHeight);
+            curX += imgDrawWidth + 50;
         }
+
         octx.textBaseline = mctx.textBaseline = "middle";
-        octx.font = mctx.font = `bold ${h * 0.85}px sans-serif`;
-        octx.fillStyle = "white"; octx.fillText(settings.text, curX, h/2);
-        mctx.fillStyle = "#FF00FF"; mctx.fillText(settings.text, curX, h/2);
+        octx.font = mctx.font = `bold ${fontSize}px sans-serif`;
+        octx.fillStyle = "white"; octx.fillText(settings.text, curX, h / 2);
+        mctx.fillStyle = "#FF00FF"; mctx.fillText(settings.text, curX, h / 2);
+
         canvas.width = V_WIDTH; canvas.height = V_HEIGHT;
     }
 
@@ -150,10 +169,8 @@
 
         settings.offset -= settings.speed;
         
-        // 自動錄影判斷邏輯
         if (isAutoMode && isRecording) {
-            const fullContentWidthInPixels = offscreen.width * step;
-            if (settings.offset < -fullContentWidthInPixels) {
+            if (settings.offset < -(offscreen.width * step)) {
                 stopRecording();
                 isAutoMode = false;
             }
@@ -166,7 +183,7 @@
     function startAutoRecording() {
         if (isRecording) return;
         updateText();
-        settings.offset = V_WIDTH; // 重置到最右側
+        settings.offset = V_WIDTH; 
         isAutoMode = true;
         startRecording();
     }
@@ -195,8 +212,8 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `白六_LED_Auto.mp4`;
-        a.click(); // 自動下載
+        a.download = `白六_LED_Auto_Balanced.mp4`;
+        a.click();
         
         document.getElementById('manualDownloadBtn').onclick = () => { a.click(); };
         document.getElementById('download-overlay').style.display = 'flex';
