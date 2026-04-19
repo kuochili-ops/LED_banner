@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 自動錄製版</title>
+    <title>白六 LED 跑馬燈 - 終極飽滿版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -46,7 +46,7 @@
     <div class="input-row">
         <input type="text" id="textInput" value="白六 LED 跑馬燈 ❤️ 🚁">
         <button class="btn" onclick="updateText()">更新</button>
-        <button id="recordBtn" class="btn" onclick="startAutoRecording()">錄影製作</button>
+        <button id="recordBtn" class="btn" onclick="startAutoRecording()">錄製並存檔</button>
     </div>
 
     <div class="image-tools">
@@ -109,30 +109,40 @@
 
     function renderBuffer() {
         const h = settings.density;
-        const fontSize = h * 0.95; 
-        octx.font = mctx.font = `bold ${fontSize}px "PingFang TC", "Microsoft JhengHei", sans-serif`;
+        // 🚀 高度比例拉滿至 0.98，強制使用極粗體
+        const fontSize = h * 0.98; 
+        const fontStr = `900 ${fontSize}px "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", sans-serif`;
+        octx.font = mctx.font = fontStr;
+        
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
         if (settings.img) {
+            // 🖼️ 圖片寬度連動：預設縮放 1.9 即為兩字寬
             imgW = h * (settings.img.width / settings.img.height) * settings.imgScale;
         }
+        
         let contentWidth = textMetrics.width + 120 + imgW + Math.abs(settings.imgX);
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
 
         octx.clearRect(0, 0, contentWidth, h);
         mctx.clearRect(0, 0, contentWidth, h);
+        
         let curX = 50;
         if (settings.img) {
             const drawH = h * settings.imgScale;
             octx.drawImage(settings.img, curX + settings.imgX, (h - drawH) / 2 + settings.imgY, imgW, drawH);
             curX += imgW + 50;
         }
+        
         octx.textBaseline = mctx.textBaseline = "middle";
         octx.fillStyle = "white"; 
+        octx.font = mctx.font = fontStr; // 再次確認字體套用
         octx.fillText(settings.text, curX, h / 2);
+        
         mctx.fillStyle = "#FF00FF"; 
         mctx.fillText(settings.text, curX, h / 2);
+        
         canvas.width = V_WIDTH; canvas.height = V_HEIGHT; 
     }
 
@@ -152,6 +162,7 @@
             for (let x = 0; x < offscreen.width; x++) {
                 const i = (y * offscreen.width + x) * 4;
                 const alpha = imgD[i + 3];
+                // ✨ 門檻提高至 120，確保邊緣乾淨銳利
                 if (alpha > 120) { 
                     const px = (x * step) + settings.offset, py = y * step;
                     if (px > -step && px < V_WIDTH) {
@@ -167,7 +178,7 @@
         }
         settings.offset -= settings.speed;
 
-        // 🎬 自動結束錄影檢查：當 offset 小於內容總寬度的負值時停止
+        // 🎬 自動結束並下載
         if (isRecording && settings.offset < -(offscreen.width * step)) {
             stopRecording();
         }
@@ -179,7 +190,7 @@
     function startAutoRecording() {
         if (isRecording) return;
         updateText();
-        settings.offset = V_WIDTH; // 從頭開始
+        settings.offset = V_WIDTH;
         recordedChunks = [];
         const stream = canvas.captureStream(30);
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4', videoBitsPerSecond: 8000000 });
@@ -196,7 +207,7 @@
         mediaRecorder.stop();
         isRecording = false;
         document.getElementById('recordBtn').classList.remove('recording');
-        document.getElementById('recordBtn').innerText = "錄影製作";
+        document.getElementById('recordBtn').innerText = "錄製並存檔";
     }
 
     function exportVideo() {
