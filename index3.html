@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 最終修正版</title>
+    <title>白六 LED 跑馬燈 - 質感暈邊版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -110,9 +110,7 @@
     function renderBuffer() {
         const h = settings.density;
         const fontSize = h * 0.98; 
-        // 🚀 關鍵修正：多重黑體備援 + 900 極粗體
         const fontStr = `900 ${fontSize}px "PingFang TC", "Hiragino Sans GB", "Microsoft JhengHei", "Noto Sans TC", sans-serif`;
-        
         octx.font = mctx.font = fontStr;
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
@@ -126,7 +124,7 @@
         octx.clearRect(0, 0, contentWidth, h);
         mctx.clearRect(0, 0, contentWidth, h);
         
-        octx.font = mctx.font = fontStr; // 再次指定確保載入
+        octx.font = mctx.font = fontStr; 
         octx.textBaseline = mctx.textBaseline = "middle";
         
         let curX = 50;
@@ -167,13 +165,15 @@
                         
                         const clr = isT ? `rgb(${targetColor.r},${targetColor.g},${targetColor.b})` : `rgb(${r},${g},${b})`;
                         
-                        // ✨ 優化光暈：底層同色 25% 透明度，稍微發散
-                        ctx.fillStyle = clr.replace('rgb', 'rgba').replace(')', ', 0.25)');
+                        // ✨ 1. 底層「淺色」擴散層 (細邊)
+                        // 我們將透明度設為 0.1 (10%)，顏色會變得很淺
+                        ctx.fillStyle = clr.replace('rgb', 'rgba').replace(')', ', 0.1)');
                         ctx.beginPath();
-                        ctx.arc(px + step/2, py + step/2, dotS * 0.7, 0, Math.PI * 2);
+                        // 範圍縮小一點點 (核心的 1.2 倍)，呈現細邊
+                        ctx.arc(px + step/2, py + step/2, dotS * 0.6, 0, Math.PI * 2);
                         ctx.fill();
 
-                        // ✨ 核心燈珠
+                        // ✨ 2. 核心燈珠層 (實色)
                         ctx.fillStyle = clr;
                         ctx.beginPath();
                         ctx.arc(px + step/2, py + step/2, dotS/2, 0, Math.PI * 2);
