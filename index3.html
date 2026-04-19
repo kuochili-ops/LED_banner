@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 專業自動錄製版</title>
+    <title>白六 LED 跑馬燈 - 規格還原版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -33,9 +33,9 @@
     <canvas id="ledCanvas"></canvas>
     <div id="download-overlay">
         <div class="modal">
-            <h2 style="margin:0 0 10px 0; color:var(--accent-green);">錄製完成</h2>
-            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">MP4 影片已自動下載</p>
-            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">手動再次下載</button>
+            <h2 style="margin:0 0 10px 0; color:var(--accent-green);">白六 LED</h2>
+            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">MP4 影片製作完成</p>
+            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">下載影片</button>
             <button onclick="closeModal()" style="background:none; color:#666; border:none;">關閉</button>
         </div>
     </div>
@@ -55,14 +55,14 @@
             <button class="btn" style="background:#222;" onclick="resetImage()">清除</button>
         </div>
         <div class="settings-grid">
-            <div style="display:flex;flex-direction:column;"><label>圖片縮放 (2字=1.7)</label><input type="range" id="imgScale" min="0.1" max="3.5" step="0.05" value="1.7" oninput="updateSettings()"></div>
-            <div style="display:flex;flex-direction:column;"><label>左右位移 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
-            <div style="display:flex;flex-direction:column;"><label>上下位移 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
+            <div style="display:flex;flex-direction:column;"><label>圖片縮放</label><input type="range" id="imgScale" min="0.1" max="3" step="0.1" value="1.7" oninput="updateSettings()"></div>
+            <div style="display:flex;flex-direction:column;"><label>左右 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
+            <div style="display:flex;flex-direction:column;"><label>上下 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
         </div>
     </div>
 
     <div class="settings-grid">
-        <div style="display:flex;flex-direction:column;"><label>速度</label><input type="range" id="speedRange" min="5" max="50" value="20" oninput="updateSettings()"></div>
+        <div style="display:flex;flex-direction:column;"><label>滾動速度</label><input type="range" id="speedRange" min="5" max="50" value="20" oninput="updateSettings()"></div>
         <div style="display:flex;flex-direction:column;"><label>點陣密度</label><input type="range" id="pixelRange" min="40" max="120" value="70" oninput="updateSettings()"></div>
         <div style="display:flex;flex-direction:column;"><label>顏色</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%;height:28px;background:none;border:none;"></div>
         <div style="display:flex;flex-direction:column;"><label>燈珠大小</label><input type="range" id="sizeRange" min="0.2" max="1" step="0.05" value="0.75" oninput="updateSettings()"></div>
@@ -109,14 +109,14 @@
 
     function renderBuffer() {
         const h = settings.density;
-        const fontSize = h * 0.88; // 稍微增加飽滿度
+        const fontSize = h * 0.85; // 【還原】字體高度比例
         octx.font = mctx.font = `bold ${fontSize}px "PingFang TC", "Microsoft JhengHei", sans-serif`;
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
         if (settings.img) {
             imgW = h * (settings.img.width / settings.img.height) * settings.imgScale;
         }
-        let contentWidth = textMetrics.width + 150 + imgW + Math.abs(settings.imgX);
+        let contentWidth = textMetrics.width + 100 + imgW + Math.abs(settings.imgX);
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
 
@@ -152,11 +152,11 @@
             for (let x = 0; x < offscreen.width; x++) {
                 const i = (y * offscreen.width + x) * 4;
                 const alpha = imgD[i + 3];
-                if (alpha > 55) { // 優化邊緣判定，讓字體更紮實
+                if (alpha > 80) { // 【還原】邊緣判定靈敏度，確保清爽
                     const px = (x * step) + settings.offset, py = y * step;
                     if (px > -step && px < V_WIDTH) {
                         const r = imgD[i], g = imgD[i+1], b = imgD[i+2];
-                        const isT = (maskD[i] > 200 && maskD[i+2] > 200 && maskD[i+1] < 50) && (Math.abs(r-g) < 20 && Math.abs(g-b) < 20);
+                        const isT = (maskD[i] > 200 && maskD[i+2] > 200 && maskD[i+1] < 50) && (Math.abs(r-g) < 15 && Math.abs(g-b) < 15);
                         ctx.fillStyle = isT ? `rgb(${targetColor.r},${targetColor.g},${targetColor.b})` : `rgb(${r},${g},${b})`;
                         ctx.beginPath();
                         ctx.arc(px + step/2, py + step/2, dotS/2, 0, Math.PI * 2);
@@ -167,7 +167,7 @@
         }
         settings.offset -= settings.speed;
 
-        // 自動錄影停止判定
+        // 自動停止錄影判定
         if (isRecording && settings.offset < -(offscreen.width * step)) {
             stopRecording();
         }
@@ -179,7 +179,7 @@
     function startAutoRecording() {
         if (isRecording) return;
         updateText();
-        settings.offset = V_WIDTH; // 重啟跑馬燈位置
+        settings.offset = V_WIDTH;
         recordedChunks = [];
         const stream = canvas.captureStream(30);
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4', videoBitsPerSecond: 8000000 });
@@ -188,7 +188,7 @@
         mediaRecorder.start();
         isRecording = true;
         document.getElementById('recordBtn').classList.add('recording');
-        document.getElementById('recordBtn').innerText = "錄製中...";
+        document.getElementById('recordBtn').innerText = "錄影中...";
     }
 
     function stopRecording() {
