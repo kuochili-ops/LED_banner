@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 0.9 飽滿規格版</title>
+    <title>白六 LED 跑馬燈 - 飽滿規格最終版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -34,8 +34,8 @@
     <div id="download-overlay">
         <div class="modal">
             <h2 style="margin:0 0 10px 0; color:var(--accent-green);">錄製完成</h2>
-            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">MP4 影片已自動下載</p>
-            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">手動再次下載</button>
+            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">影片已製作成功</p>
+            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">下載影片</button>
             <button onclick="closeModal()" style="background:none; color:#666; border:none;">關閉</button>
         </div>
     </div>
@@ -55,7 +55,7 @@
             <button class="btn" style="background:#222;" onclick="resetImage()">清除</button>
         </div>
         <div class="settings-grid">
-            <div style="display:flex;flex-direction:column;"><label>圖片縮放 (2字=1.8)</label><input type="range" id="imgScale" min="0.1" max="2.7" step="0.05" value="1.8" oninput="updateSettings()"></div>
+            <div style="display:flex;flex-direction:column;"><label>圖片縮放 (2字=1.9)</label><input type="range" id="imgScale" min="0.1" max="3" step="0.05" value="1.9" oninput="updateSettings()"></div>
             <div style="display:flex;flex-direction:column;"><label>左右 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
             <div style="display:flex;flex-direction:column;"><label>上下 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
         </div>
@@ -74,7 +74,7 @@
     const V_WIDTH = 1280, V_HEIGHT = 720;
     let settings = { 
         text: "", density: 70, dotScale: 0.75, color: "#00ff00", speed: 20, offset: V_WIDTH,
-        img: null, imgScale: 1.8, imgX: 0, imgY: 0
+        img: null, imgScale: 1.9, imgX: 0, imgY: 0
     };
     
     const offscreen = document.createElement('canvas'), octx = offscreen.getContext('2d');
@@ -109,7 +109,7 @@
 
     function renderBuffer() {
         const h = settings.density;
-        const fontSize = h * 0.9; // 💡 飽滿度提升至 0.9
+        const fontSize = h * 0.95; // 🚀 極致飽滿度
         octx.font = mctx.font = `bold ${fontSize}px "PingFang TC", "Microsoft JhengHei", sans-serif`;
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
@@ -122,17 +122,21 @@
 
         octx.clearRect(0, 0, contentWidth, h);
         mctx.clearRect(0, 0, contentWidth, h);
+        
         let curX = 50;
         if (settings.img) {
             const drawH = h * settings.imgScale;
             octx.drawImage(settings.img, curX + settings.imgX, (h - drawH) / 2 + settings.imgY, imgW, drawH);
             curX += imgW + 50;
         }
+        
         octx.textBaseline = mctx.textBaseline = "middle";
         octx.fillStyle = "white"; 
         octx.fillText(settings.text, curX, h / 2);
+        
         mctx.fillStyle = "#FF00FF"; 
         mctx.fillText(settings.text, curX, h / 2);
+        
         canvas.width = V_WIDTH; canvas.height = V_HEIGHT; 
     }
 
@@ -152,7 +156,9 @@
             for (let x = 0; x < offscreen.width; x++) {
                 const i = (y * offscreen.width + x) * 4;
                 const alpha = imgD[i + 3];
-                if (alpha > 100) { // 💡 提高判定門檻，讓點陣更銳利
+                
+                // 💎 門檻提高至 120，過濾模糊點，確保點陣極度乾淨
+                if (alpha > 120) { 
                     const px = (x * step) + settings.offset, py = y * step;
                     if (px > -step && px < V_WIDTH) {
                         const r = imgD[i], g = imgD[i+1], b = imgD[i+2];
