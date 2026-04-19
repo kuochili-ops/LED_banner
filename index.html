@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>LED Banner Pro - Full Text 16:9</title>
+    <style>
+        :root {
+            --bg-color: #000;
+            --panel-bg: #1a1a1a;
+            --accent-blue: #007AFF;
+            --accent-red: #ff3b30;
+        }
+
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: -apple-system, sans-serif; color: #fff; }
+        body { display: flex; flex-direction: column; }
+
+        #display-container {
+            flex: 1; display: flex; align-items: center; justify-content: center;
+            overflow: hidden; position: relative; background: #000;
+        }
+
+        canvas { 
+            aspect-ratio: 16 / 9;
+            width: 100% !important; 
+            max-height: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+        }
+
+        #download-overlay {
+            display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 1000; flex-direction: column;
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        .modal { background: #222; padding: 25px; border-radius: 15px; text-align: center; max-width: 300px; border: 1px solid #444; }
+
+        #controls {
+            background: var(--panel-bg); padding: 15px;
+            padding-bottom: calc(15px + env(safe-area-inset-bottom));
+            display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #333;
+        }
+
+        @media (orientation: landscape) { #controls { display: none; } }
+
+        .input-row { display: flex; gap: 8px; }
+        input[type="text"] {
+            flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #333;
+            background: #222; color: white; font-size: 16px;
+        }
+        
+        button { padding: 10px 15px; border-radius: 8px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer; }
+        #recordBtn { background: var(--accent-red); min-width: 80px; }
+        #recordBtn.recording { animation: pulse 1s infinite; background: #900; }
+        @keyframes pulse { 0% {opacity:1} 50% {opacity:0.5} 100% {opacity:1} }
+
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 15px; font-size: 12px; color: #aaa; }
+        input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
+    </style>
+</head>
+<body>
+
+<div id="display-container">
+    <canvas id="ledCanvas"></canvas>
+    
+    <div id="download-overlay">
+        <div class="modal">
+            <h3 style="margin-top:0;">錄製完成 (16:9)</h3>
+            <button id="manualDownloadBtn" style="width:100%; margin-bottom:10px; background:#34c759;">下載影片 (MP4)</button>
+            <button onclick="closeModal()" style="background:none; color:#888; text-decoration:underline;">關閉</button>
+        </div>
+    </div>
+</div>
+
+<div id="controls">
+    <div class="input-row">
+        <input type="text" id="textInput" value="早安 星期天 ❤️ 🚁">
+        <button onclick="updateText()">更新</button>
+        <button id="recordBtn" onclick="toggleRecording()">錄影</button>
+    </div>
+    <div class="settings-grid">
+        <div style="display:flex; flex-direction:column; gap:4px;"><label>滾動速度</label><input type="range" id="speedRange" min="0" max="40" value="20" oninput="updateSettings()"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;"><label>點陣密度</label><input type="range" id="pixelRange" min="50" max="150" value="100" oninput="updateSettings()"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;"><label>文字顏色</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%; border:none; background:none; height:25px;"></div>
+        <div style="display:flex; flex-direction:column; gap:4px;"><label>燈珠大小</label><input type="range" id="sizeRange" min="0.3" max="1" step="0.1" value="0.7" oninput="updateSettings()"></div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('ledCanvas'), ctx = canvas.getContext('2d', { alpha: false });
+    const textInput = document.getElementById('textInput'), recordBtn = document.getElementById('recordBtn');
+    const overlay = document.getElementById('download-overlay'), manualBtn = document.getElementById('manualDownloadBtn');
+
+    // 鎖定 16:9 解析度
+    const V_WIDTH = 1280;
+    const V_HEIGHT = 720;
+
+    let settings = { 
+        text: textInput.value, 
+        density: 100, // 垂直方向的燈珠數量
+        dotScale: 0.7, // 燈珠占格子的比例
+        color: "#00ff00", 
+        speed: 20, 
+        offset: V_WIDTH 
+    };
+
+    const offscreen = document.createElement('canvas'), octx = offscreen.getContext('2d');
+    let mediaRecorder, recordedChunks = [], isRecording = false;
+
+    function updateSettings() {
+        settings.speed = parseInt(document.getElementById('speedRange').value);
+        settings.density = parseInt(document.getElementById('pixelRange').value);
+        settings.dotScale = parseFloat(document.getElementById('sizeRange').value);
+        settings.color = document.getElementById('colorPicker').value;
+        renderBuffer();
+    }
+
+    function updateText() { 
+        settings.text = textInput.value; 
+        renderBuffer(); 
+        settings.offset = V_WIDTH; 
+    }
+
+    function renderBuffer() {
+        // 設定離屏畫布高度為密度，寬度依文字長度動態調整
+        const fontSize = settings.density * 0.8; 
+        octx.font = `bold ${fontSize}px sans-serif`;
+        const metrics = octx.measureText(settings.text);
+        
+        offscreen.height = settings.density;
+        offscreen.width = metrics.width + 100;
+
+        octx.clearRect(0, 0, offscreen.width, offscreen.height);
+        octx.textBaseline = "middle";
+        octx.textAlign = "left";
+        octx.font = `bold ${fontSize}px sans-serif`;
+        octx.fillStyle = "white"; 
+        octx.fillText(settings.text, 50, offscreen.height / 2);
+        
+        canvas.width = V_WIDTH; 
+        canvas.height = V_HEIGHT; 
+    }
+
+    function draw() {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        const imgData = octx.getImageData(0, 0, offscreen.width, offscreen.height);
+        const data = imgData.data;
+        
+        // 確保點陣完美填滿 16:9 高度
+        const step = V_HEIGHT / settings.density;
+        const dotSize = step * settings.dotScale;
+
+        for (let y = 0; y < offscreen.height; y++) {
+            for (let x = 0; x < offscreen.width; x++) {
+                const idx = (y * offscreen.width + x) * 4;
+                if (data[idx + 3] > 120) {
+                    const posX = (x * step) + settings.offset;
+                    const posY = y * step;
+
+                    // 只繪製在 16:9 可視範圍內的點
+                    if (posX > -step && posX < V_WIDTH) {
+                        const r = data[idx], g = data[idx+1], b = data[idx+2];
+                        const isGray = (Math.abs(r-g) < 10 && Math.abs(g-b) < 10);
+                        
+                        ctx.fillStyle = isGray ? settings.color : `rgb(${r},${g},${b})`;
+                        
+                        // 繪製圓點 LED
+                        ctx.beginPath();
+                        ctx.arc(posX + step/2, posY + step/2, dotSize/2, 0, Math.PI * 2);
+                        ctx.fill();
+                        
+                        // 光暈效果
+                        ctx.fillStyle = "rgba(255,255,255,0.2)";
+                        ctx.beginPath();
+                        ctx.arc(posX + step/2, posY + step/2, dotSize/4, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                }
+            }
+        }
+
+        settings.offset -= settings.speed;
+        if (settings.offset < -(offscreen.width * step)) {
+            settings.offset = V_WIDTH;
+        }
+        requestAnimationFrame(draw);
+    }
+
+    function toggleRecording() {
+        if (!isRecording) {
+            recordedChunks = [];
+            const stream = canvas.captureStream(30);
+            const type = MediaRecorder.isTypeSupported('video/mp4') ? 'video/mp4' : 'video/webm';
+            mediaRecorder = new MediaRecorder(stream, { 
+                mimeType: type, 
+                videoBitsPerSecond: 6000000 
+            });
+            mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.push(e.data); };
+            mediaRecorder.onstop = exportVideo;
+            mediaRecorder.start();
+            isRecording = true;
+            recordBtn.innerText = "停止"; recordBtn.classList.add('recording');
+        } else {
+            mediaRecorder.stop();
+            isRecording = false;
+            recordBtn.innerText = "錄影"; recordBtn.classList.remove('recording');
+        }
+    }
+
+    function exportVideo() {
+        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+        const url = URL.createObjectURL(blob);
+        const triggerDownload = () => {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `LED_FullText_16-9.mp4`;
+            a.click();
+        };
+        triggerDownload();
+        manualBtn.onclick = triggerDownload;
+        overlay.style.display = 'flex';
+    }
+
+    function closeModal() { overlay.style.display = 'none'; }
+    window.addEventListener('resize', renderBuffer);
+    renderBuffer(); 
+    settings.offset = V_WIDTH; 
+    draw();
+</script>
+</body>
+</html>
