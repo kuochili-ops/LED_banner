@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>白六 LED 跑馬燈 - GIF 版</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <style>
+        :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; --accent-purple: #af52de; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "PingFang TC", sans-serif; color: #fff; }
+        body { display: flex; flex-direction: column; }
+        #display-container { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        canvas { aspect-ratio: 16 / 9; width: 100% !important; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
+        #download-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .modal { background: #222; padding: 25px; border-radius: 20px; text-align: center; max-width: 320px; border: 1px solid #444; }
+        #controls { background: var(--panel-bg); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 10px; border-top: 1px solid #333; overflow-y: auto; max-height: 55%; }
+        @media (orientation: landscape) { #controls { display: none; } }
+        .section-title { font-size: 10px; color: #666; letter-spacing: 1px; }
+        .input-row { display: flex; gap: 6px; align-items: center; }
+        input[type="text"] { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #333; background: #222; color: white; font-size: 15px; outline: none; }
+        .btn { padding: 8px 12px; border-radius: 8px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer; font-size: 13px; }
+        #recordGifBtn { background: var(--accent-purple); }
+        .recording { animation: pulse 1s infinite; opacity: 0.8; }
+        @keyframes pulse { 0% {opacity:1} 50% {opacity:0.5} 100% {opacity:1} }
+        .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; font-size: 11px; color: #aaa; }
+        input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
+        .image-tools { background: rgba(255,255,255,0.03); padding: 10px; border-radius: 10px; border: 1px dashed #444; }
+    </style>
+</head>
+<body>
+
+<div id="display-container">
+    <canvas id="ledCanvas"></canvas>
+    <div id="download-overlay">
+        <div class="modal">
+            <h2 id="statusTitle" style="margin:0 0 10px 0; color:var(--accent-green);">處理中...</h2>
+            <p id="statusMsg" style="color:#aaa; font-size:14px; margin-bottom:20px;">正在編碼 GIF，請稍候</p>
+            <button id="manualDownloadBtn" class="btn" style="width:100%; display:none; background:var(--accent-green); height:45px;">下載檔案</button>
+            <button id="closeModalBtn" onclick="closeModal()" style="display:none; background:none; color:#666; border:none; margin-top:10px;">關閉</button>
+        </div>
+    </div>
+</div>
+
+<div id="controls">
+    <div class="section-title">內容與輸出</div>
+    <div class="input-row">
+        <input type="text" id="textInput" value="白六 LED 跑馬燈 ❤️">
+        <button class="btn" onclick="updateText()">更新</button>
+        <button id="recordBtn" class="btn" onclick="toggleRecording('mp4')">錄影</button>
+        <button id="recordGifBtn" class="btn" onclick="toggleRecording('gif')">GIF</button>
+    </div>
+
+    <div class="image-tools">
+        <div class="input-row" style="margin-bottom:8px;">
+            <label class="btn" style="flex:1; background:#333; text-align:center;">選圖片<input type="file" id="imageInput" accept="image/*" hidden onchange="handleImage(this)"></label>
+            <button class="btn" style="background:#222;" onclick="resetImage()">清除</button>
+        </div>
+        <div class="settings-grid">
+            <div style="display:flex;flex-direction:column;"><label>縮放</label><input type="range" id="imgScale" min="0.1" max="3" step="0.1" value="1" oninput="updateSettings()"></div>
+            <div style="display:flex;flex-direction:column;"><label>X 位移</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
+        </div>
+    </div>
+
+    <div class="settings-grid">
+        <div style="display:flex;flex-direction:column;"><label>速度</label><input type="range" id="speedRange" min="0" max="40" value="20" oninput="updateSettings()"></div>
+        <div style="display:flex;flex-direction:column;"><label>點陣密度</label><input type="range" id="pixelRange" min="40" max="100" value="60" oninput="updateSettings()"></div>
+        <div style="display:flex;flex-direction:column;"><label>文字色</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%;height:25px;background:none;border:none;"></div>
+        <div style="display:flex;flex-direction:column;"><label>燈珠大小</label><input type="range" id="sizeRange" min="0.2" max="1" step="0.05" value="0.7" oninput="updateSettings()"></div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('ledCanvas'), ctx = canvas.getContext('2d', { alpha: false });
+    const V_WIDTH = 1280, V_HEIGHT = 720;
+    let settings = { text: "白六 LED", density: 60, dotScale: 0.7, color: "#00ff00", speed: 20, offset: V_WIDTH, img: null, imgScale: 1.0, imgX: 0, imgY: 0 };
+    
+    const offscreen = document.createElement('canvas'), octx = offscreen.getContext('2d');
+    const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d');
+    
+    let isRecording = false, mode = 'mp4', gifEncoder = null, recordedChunks = [], mediaRecorder = null;
+
+    function handleImage(input) {
+        if (input.files && input.files[0]) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                const img = new Image();
+                img.onload = () => { settings.img = img; renderBuffer(); settings.offset = V_WIDTH; };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    function resetImage() { settings.img = null; renderBuffer(); }
+    function updateText() { settings.text = document.getElementById('textInput').value; renderBuffer(); settings.offset = V_WIDTH; }
+    function updateSettings() {
+        settings.speed = parseInt(document.getElementById('speedRange').value);
+        settings.density = parseInt(document.getElementById('pixelRange').value);
+        settings.dotScale = parseFloat(document.getElementById('sizeRange').value);
+        settings.color = document.getElementById('colorPicker').value;
+        settings.imgScale = parseFloat(document.getElementById('imgScale').value);
+        settings.imgX = parseInt(document.getElementById('imgX').value);
+        renderBuffer();
+    }
+
+    function renderBuffer() {
+        const h = settings.density;
+        octx.font = `bold ${h * 0.85}px sans-serif`;
+        let textW = octx.measureText(settings.text).width;
+        let contentW = textW + 200;
+        if (settings.img) contentW += (h * (settings.img.width/settings.img.height) * settings.imgScale) + 50;
+        offscreen.width = maskCanvas.width = contentW;
+        offscreen.height = maskCanvas.height = h;
+        octx.clearRect(0, 0, contentW, h); mctx.clearRect(0, 0, contentW, h);
+        let curX = 50;
+        if (settings.img) {
+            let iw = h * (settings.img.width/settings.img.height) * settings.imgScale;
+            octx.drawImage(settings.img, curX + settings.imgX, (h - h*settings.imgScale)/2, iw, h*settings.imgScale);
+            curX += iw + 50;
+        }
+        octx.textBaseline = mctx.textBaseline = "middle";
+        octx.font = mctx.font = `bold ${h * 0.85}px sans-serif`;
+        octx.fillStyle = "white"; octx.fillText(settings.text, curX, h/2);
+        mctx.fillStyle = "#FF00FF"; mctx.fillText(settings.text, curX, h/2);
+        canvas.width = V_WIDTH; canvas.height = V_HEIGHT;
+    }
+
+    function draw() {
+        ctx.fillStyle = "#000"; ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        const imgD = octx.getImageData(0, 0, offscreen.width, offscreen.height).data;
+        const maskD = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
+        const step = V_HEIGHT / settings.density, dotS = step * settings.dotScale;
+        const tCol = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(settings.color).map(x => parseInt(x, 16));
+
+        for (let y = 0; y < offscreen.height; y++) {
+            for (let x = 0; x < offscreen.width; x++) {
+                const i = (y * offscreen.width + x) * 4;
+                if (imgD[i+3] > 80) {
+                    const px = (x * step) + settings.offset, py = y * step;
+                    if (px > -step && px < V_WIDTH) {
+                        const isT = (maskD[i] > 200 && maskD[i+2] > 200) && (Math.abs(imgD[i]-imgD[i+1]) < 15);
+                        ctx.fillStyle = isT ? `rgb(${tCol[1]},${tCol[2]},${tCol[3]})` : `rgb(${imgD[i]},${imgD[i+1]},${imgD[i+2]})`;
+                        ctx.beginPath(); ctx.arc(px + step/2, py + step/2, dotS/2, 0, 7); ctx.fill();
+                    }
+                }
+            }
+        }
+        if (isRecording && mode === 'gif') {
+            // 每秒抓取約 15 幀降低負擔
+            gifEncoder.addFrame(ctx, {copy: true, delay: 66});
+        }
+        settings.offset -= settings.speed;
+        if (settings.offset < -(offscreen.width * step)) settings.offset = V_WIDTH;
+        requestAnimationFrame(draw);
+    }
+
+    function toggleRecording(type) {
+        if (!isRecording) {
+            mode = type; isRecording = true;
+            document.getElementById(type === 'gif' ? 'recordGifBtn' : 'recordBtn').classList.add('recording');
+            if (type === 'mp4') {
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(canvas.captureStream(30), { mimeType: 'video/mp4', videoBitsPerSecond: 5000000 });
+                mediaRecorder.ondataavailable = e => recordedChunks.push(e.data);
+                mediaRecorder.onstop = () => exportFile('mp4');
+                mediaRecorder.start();
+            } else {
+                gifEncoder = new GIF({ workers: 2, quality: 10, width: V_WIDTH/2, height: V_HEIGHT/2 }); // 縮小尺寸加速編碼
+                gifEncoder.on('finished', blob => exportFile('gif', blob));
+            }
+        } else {
+            isRecording = false;
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('recording'));
+            if (mode === 'mp4') mediaRecorder.stop();
+            else {
+                document.getElementById('download-overlay').style.display = 'flex';
+                gifEncoder.render();
+            }
+        }
+    }
+
+    function exportFile(type, blob) {
+        const finalBlob = type === 'mp4' ? new Blob(recordedChunks, {type: 'video/mp4'}) : blob;
+        const url = URL.createObjectURL(finalBlob);
+        document.getElementById('statusTitle').innerText = "完成！";
+        document.getElementById('statusMsg').innerText = `已生成白六 LED ${type.toUpperCase()}`;
+        const btn = document.getElementById('manualDownloadBtn');
+        btn.style.display = 'block';
+        btn.onclick = () => {
+            const a = document.createElement('a'); a.href = url;
+            a.download = `白六_LED.${type}`; a.click();
+        };
+        document.getElementById('closeModalBtn').style.display = 'inline-block';
+        document.getElementById('download-overlay').style.display = 'flex';
+    }
+
+    function closeModal() { 
+        document.getElementById('download-overlay').style.display = 'none';
+        document.getElementById('manualDownloadBtn').style.display = 'none';
+        document.getElementById('statusTitle').innerText = "處理中...";
+    }
+    renderBuffer(); draw();
+</script>
+</body>
+</html>
