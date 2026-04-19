@@ -3,26 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 文字完美版</title>
+    <title>白六 LED 跑馬燈</title>
     <style>
-        :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-green: #34c759; --accent-red: #ff3b30; }
+        :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "PingFang TC", "Apple Color Emoji", sans-serif; color: #fff; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; color: #fff; }
         body { display: flex; flex-direction: column; }
-        #display-container { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
+        
+        #display-container { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; background: #000; }
         canvas { aspect-ratio: 16 / 9; width: 100% !important; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
-        #download-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.92); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
-        .modal { background: #222; padding: 25px; border-radius: 20px; text-align: center; max-width: 320px; border: 1px solid #444; }
+        
+        #download-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+        .modal { background: #222; padding: 30px; border-radius: 20px; text-align: center; max-width: 320px; border: 1px solid #444; }
+        
         #controls { background: var(--panel-bg); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #333; overflow-y: auto; max-height: 55%; }
         @media (orientation: landscape) { #controls { display: none; } }
-        .section-title { font-size: 10px; color: #666; letter-spacing: 1px; }
+        
+        .section-title { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
         .input-row { display: flex; gap: 8px; align-items: center; }
         input[type="text"] { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; font-size: 16px; outline: none; }
-        .btn { padding: 10px 15px; border-radius: 10px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer; font-size: 14px; }
-        #autoRecordBtn { background: var(--accent-green); }
-        .recording { animation: pulse 1s infinite; background: var(--accent-red) !important; }
+        
+        .btn { padding: 10px 18px; border-radius: 10px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer; text-align: center; font-size: 14px; }
+        #autoRecordBtn { background: var(--accent-green); min-width: 100px; }
+        #autoRecordBtn.recording { animation: pulse 1s infinite; background: var(--accent-red); }
         @keyframes pulse { 0% {opacity:1} 50% {opacity:0.6} 100% {opacity:1} }
+
         .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 15px; font-size: 11px; color: #aaa; }
+        .setting-item { display: flex; flex-direction: column; gap: 6px; }
         input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
         .image-tools { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px dashed #444; }
     </style>
@@ -34,8 +41,8 @@
     <div id="download-overlay">
         <div class="modal">
             <h2 style="margin:0 0 10px 0; color:var(--accent-green);">白六 LED</h2>
-            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">自動錄製已完成</p>
-            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">下載影片 (MP4)</button>
+            <p id="statusMsg" style="color:#aaa; font-size:14px; margin-bottom:20px;">自動錄製已完成並下載</p>
+            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">手動再次下載</button>
             <button onclick="closeModal()" style="background:none; color:#666; border:none; font-size:13px;">返回編輯</button>
         </div>
     </div>
@@ -44,37 +51,44 @@
 <div id="controls">
     <div class="section-title">文字內容</div>
     <div class="input-row">
-        <input type="text" id="textInput" value="早安 星期天 ❤️ 🚀">
+        <input type="text" id="textInput" value="白六 LED 跑馬燈 ❤️ 🚀">
         <button class="btn" onclick="updateText()">更新</button>
         <button id="autoRecordBtn" class="btn" onclick="startAutoRecording()">自動錄影</button>
     </div>
 
+    <div class="section-title">圖片與位置</div>
     <div class="image-tools">
         <div class="input-row" style="margin-bottom:10px;">
-            <label class="btn" style="flex:1; background:#333; text-align:center;">選擇圖片<input type="file" id="imageInput" accept="image/*" hidden onchange="handleImage(this)"></label>
+            <label class="btn" style="flex:1; background:#333;">選擇圖片<input type="file" id="imageInput" accept="image/*" hidden onchange="handleImage(this)"></label>
             <button class="btn" style="background:#222;" onclick="resetImage()">清除</button>
         </div>
         <div class="settings-grid">
-            <div style="display:flex;flex-direction:column;"><label>圖片縮放</label><input type="range" id="imgScale" min="0.5" max="4" step="0.1" value="1.8" oninput="updateSettings()"></div>
-            <div style="display:flex;flex-direction:column;"><label>左右 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
-            <div style="display:flex;flex-direction:column;"><label>上下 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
+            <div class="setting-item"><label>縮放</label><input type="range" id="imgScale" min="0.5" max="3" step="0.1" value="1.5" oninput="updateSettings()"></div>
+            <div class="setting-item"><label>水平位移 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
+            <div class="setting-item"><label>垂直位移 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
         </div>
     </div>
 
     <div class="settings-grid">
-        <div style="display:flex;flex-direction:column;"><label>滾動速度</label><input type="range" id="speedRange" min="5" max="60" value="25" oninput="updateSettings()"></div>
-        <div style="display:flex;flex-direction:column;"><label>點陣密度</label><input type="range" id="pixelRange" min="40" max="120" value="70" oninput="updateSettings()"></div>
-        <div style="display:flex;flex-direction:column;"><label>燈珠顏色</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%;height:25px;background:none;border:none;"></div>
-        <div style="display:flex;flex-direction:column;"><label>燈珠大小</label><input type="range" id="sizeRange" min="0.2" max="1" step="0.05" value="0.75" oninput="updateSettings()"></div>
+        <div class="setting-item"><label>滾動速度</label><input type="range" id="speedRange" min="5" max="50" value="25" oninput="updateSettings()"></div>
+        <div class="setting-item"><label>點陣密度</label><input type="range" id="pixelRange" min="40" max="120" value="70" oninput="updateSettings()"></div>
+        <div class="setting-item"><label>文字顏色</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%; height:25px; background:none; border:none;"></div>
+        <div class="setting-item"><label>燈珠大小</label><input type="range" id="sizeRange" min="0.2" max="1" step="0.05" value="0.75" oninput="updateSettings()"></div>
     </div>
 </div>
 
 <script>
     const canvas = document.getElementById('ledCanvas'), ctx = canvas.getContext('2d', { alpha: false });
     const V_WIDTH = 1280, V_HEIGHT = 720;
-    let settings = { text: "", density: 70, dotScale: 0.75, color: "#00ff00", speed: 25, offset: V_WIDTH, img: null, imgScale: 1.8, imgX: 0, imgY: 0 };
+    
+    let settings = { 
+        text: "", density: 70, dotScale: 0.75, color: "#00ff00", speed: 25, offset: V_WIDTH, 
+        img: null, imgScale: 1.5, imgX: 0, imgY: 0 
+    };
+    
     const offscreen = document.createElement('canvas'), octx = offscreen.getContext('2d');
     const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d');
+    
     let mediaRecorder, recordedChunks = [], isRecording = false, isAutoMode = false;
 
     function handleImage(input) {
@@ -88,8 +102,10 @@
             reader.readAsDataURL(input.files[0]);
         }
     }
+
     function resetImage() { settings.img = null; renderBuffer(); }
     function updateText() { settings.text = document.getElementById('textInput').value; renderBuffer(); settings.offset = V_WIDTH; }
+    
     function updateSettings() {
         settings.speed = parseInt(document.getElementById('speedRange').value);
         settings.density = parseInt(document.getElementById('pixelRange').value);
@@ -103,32 +119,35 @@
 
     function renderBuffer() {
         const h = settings.density;
-        const fontSize = h * 0.88; // 稍微增加字體比例，讓點陣更飽滿
-        const fontStr = `bold ${fontSize}px "PingFang TC", "Apple Color Emoji", sans-serif`;
-        octx.font = mctx.font = fontStr;
+        const fontSize = h * 0.85; 
+        octx.font = mctx.font = `bold ${fontSize}px sans-serif`;
         let textMetrics = octx.measureText(settings.text);
-        let imgW = 0, imgH = 0;
+        
+        let imgW = 0;
         if (settings.img) {
             const aspect = settings.img.width / settings.img.height;
-            imgH = fontSize * settings.imgScale;
-            imgW = imgH * aspect;
+            imgW = h * aspect * settings.imgScale;
         }
+
         let contentWidth = textMetrics.width + 150 + imgW + Math.abs(settings.imgX);
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
 
         octx.clearRect(0, 0, contentWidth, h);
         mctx.clearRect(0, 0, contentWidth, h);
+        
         let curX = 50;
         if (settings.img) {
-            octx.drawImage(settings.img, curX + settings.imgX, (h - imgH) / 2 + settings.imgY, imgW, imgH);
+            octx.drawImage(settings.img, curX + settings.imgX, (h - (h * settings.imgScale)) / 2 + settings.imgY, imgW, h * settings.imgScale);
             curX += imgW + 50;
         }
+
         octx.textBaseline = mctx.textBaseline = "middle";
         octx.fillStyle = "white"; 
         octx.fillText(settings.text, curX, h / 2);
-        mctx.fillStyle = "#FF00FF"; // 桃紅色遮罩
+        mctx.fillStyle = "#FF00FF"; 
         mctx.fillText(settings.text, curX, h / 2);
+
         canvas.width = V_WIDTH; canvas.height = V_HEIGHT;
     }
 
@@ -139,6 +158,7 @@
 
     function draw() {
         ctx.fillStyle = "#000"; ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        
         const imgD = octx.getImageData(0, 0, offscreen.width, offscreen.height).data;
         const maskD = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
         const step = V_HEIGHT / settings.density, dotS = step * settings.dotScale;
@@ -148,23 +168,12 @@
             for (let x = 0; x < offscreen.width; x++) {
                 const i = (y * offscreen.width + x) * 4;
                 const alpha = imgD[i+3];
-
-                if (alpha > 40) { // 回復較靈敏的 alpha 判定，捕捉更多文字邊緣像素
+                if (alpha > 80) {
                     const px = (x * step) + settings.offset, py = y * step;
                     if (px > -step && px < V_WIDTH) {
                         const r = imgD[i], g = imgD[i+1], b = imgD[i+2];
-                        const mr = maskD[i], mg = maskD[i+1], mb = maskD[i+2];
-
-                        // 文字判定邏輯：在桃紅遮罩內且趨向灰階
-                        const isText = (mr > 200 && mb > 200 && mg < 50) && (Math.abs(r-g) < 25 && Math.abs(g-b) < 25);
-
-                        if (isText) {
-                            // 這裡直接套用顏色，並稍微保留一些原始的亮度感
-                            ctx.fillStyle = `rgb(${targetColor.r}, ${targetColor.g}, ${targetColor.b})`;
-                        } else {
-                            ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                        }
-                        
+                        const isText = (maskD[i] > 200 && maskD[i+2] > 200 && maskD[i+1] < 50) && (Math.abs(r-g) < 15 && Math.abs(g-b) < 15);
+                        ctx.fillStyle = isText ? `rgba(${targetColor.r}, ${targetColor.g}, ${targetColor.b}, ${alpha/255})` : `rgba(${r}, ${g}, ${b}, ${alpha/255})`;
                         ctx.beginPath();
                         ctx.arc(px + step/2, py + step/2, dotS/2, 0, Math.PI * 2);
                         ctx.fill();
@@ -172,32 +181,67 @@
                 }
             }
         }
+
         settings.offset -= settings.speed;
-        if (isAutoMode && isRecording && settings.offset < -(offscreen.width * step)) { stopRecording(); isAutoMode = false; }
-        if (settings.offset < -(offscreen.width * step)) settings.offset = V_WIDTH;
+        
+        // 自動結束錄影邏輯
+        const fullContentWidthInPixels = offscreen.width * step;
+        if (isAutoMode && isRecording) {
+            // 當內容完全穿過螢幕左側
+            if (settings.offset < -fullContentWidthInPixels) {
+                stopRecording();
+                isAutoMode = false;
+            }
+        }
+
+        if (settings.offset < -fullContentWidthInPixels) settings.offset = V_WIDTH;
         requestAnimationFrame(draw);
     }
 
-    function startAutoRecording() { if (isRecording) return; updateText(); settings.offset = V_WIDTH; isAutoMode = true; startRecording(); }
-    function startRecording() {
+    function startAutoRecording() {
+        if (isRecording) return;
+        updateText(); // 先重整 Buffer
+        settings.offset = V_WIDTH; // 強制從最右側開始
+        isAutoMode = true;
+        
         recordedChunks = [];
         mediaRecorder = new MediaRecorder(canvas.captureStream(30), { mimeType: 'video/mp4', videoBitsPerSecond: 8000000 });
         mediaRecorder.ondataavailable = e => { if(e.data.size > 0) recordedChunks.push(e.data); };
         mediaRecorder.onstop = exportVideo;
         mediaRecorder.start();
+        
         isRecording = true;
-        document.getElementById('autoRecordBtn').classList.add('recording');
-        document.getElementById('autoRecordBtn').innerText = "錄製中...";
+        const btn = document.getElementById('autoRecordBtn');
+        btn.innerText = "錄影中..."; btn.classList.add('recording');
     }
-    function stopRecording() { if (!isRecording) return; mediaRecorder.stop(); isRecording = false; document.getElementById('autoRecordBtn').classList.remove('recording'); document.getElementById('autoRecordBtn').innerText = "自動錄影"; }
+
+    function stopRecording() {
+        if (!isRecording) return;
+        mediaRecorder.stop();
+        isRecording = false;
+        const btn = document.getElementById('autoRecordBtn');
+        btn.innerText = "自動錄影"; btn.classList.remove('recording');
+    }
+
     function exportVideo() {
-        const url = URL.createObjectURL(new Blob(recordedChunks, { type: 'video/mp4' }));
-        const a = document.createElement('a'); a.href = url; a.download = `白六_LED_完美文字.mp4`; a.click();
+        const blob = new Blob(recordedChunks, { type: 'video/mp4' });
+        const url = URL.createObjectURL(blob);
+        
+        // 自動下載
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `白六_LED_跑馬燈_${Date.now()}.mp4`;
+        a.click();
+        
+        // 顯示下載彈窗供手動再次下載
         document.getElementById('manualDownloadBtn').onclick = () => { a.click(); };
         document.getElementById('download-overlay').style.display = 'flex';
     }
+
     function closeModal() { document.getElementById('download-overlay').style.display = 'none'; }
-    updateText(); draw();
+    
+    updateText();
+    draw();
 </script>
 </body>
 </html>
