@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 飽滿規格最終版</title>
+    <title>白六 LED 跑馬燈 - 自動錄製版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -34,8 +34,8 @@
     <div id="download-overlay">
         <div class="modal">
             <h2 style="margin:0 0 10px 0; color:var(--accent-green);">錄製完成</h2>
-            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">影片已製作成功</p>
-            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">下載影片</button>
+            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">影片已自動下載</p>
+            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">再次下載</button>
             <button onclick="closeModal()" style="background:none; color:#666; border:none;">關閉</button>
         </div>
     </div>
@@ -109,7 +109,7 @@
 
     function renderBuffer() {
         const h = settings.density;
-        const fontSize = h * 0.95; // 🚀 極致飽滿度
+        const fontSize = h * 0.95; 
         octx.font = mctx.font = `bold ${fontSize}px "PingFang TC", "Microsoft JhengHei", sans-serif`;
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
@@ -122,21 +122,17 @@
 
         octx.clearRect(0, 0, contentWidth, h);
         mctx.clearRect(0, 0, contentWidth, h);
-        
         let curX = 50;
         if (settings.img) {
             const drawH = h * settings.imgScale;
             octx.drawImage(settings.img, curX + settings.imgX, (h - drawH) / 2 + settings.imgY, imgW, drawH);
             curX += imgW + 50;
         }
-        
         octx.textBaseline = mctx.textBaseline = "middle";
         octx.fillStyle = "white"; 
         octx.fillText(settings.text, curX, h / 2);
-        
         mctx.fillStyle = "#FF00FF"; 
         mctx.fillText(settings.text, curX, h / 2);
-        
         canvas.width = V_WIDTH; canvas.height = V_HEIGHT; 
     }
 
@@ -156,8 +152,6 @@
             for (let x = 0; x < offscreen.width; x++) {
                 const i = (y * offscreen.width + x) * 4;
                 const alpha = imgD[i + 3];
-                
-                // 💎 門檻提高至 120，過濾模糊點，確保點陣極度乾淨
                 if (alpha > 120) { 
                     const px = (x * step) + settings.offset, py = y * step;
                     if (px > -step && px < V_WIDTH) {
@@ -173,6 +167,7 @@
         }
         settings.offset -= settings.speed;
 
+        // 🎬 自動結束錄影檢查：當 offset 小於內容總寬度的負值時停止
         if (isRecording && settings.offset < -(offscreen.width * step)) {
             stopRecording();
         }
@@ -184,7 +179,7 @@
     function startAutoRecording() {
         if (isRecording) return;
         updateText();
-        settings.offset = V_WIDTH;
+        settings.offset = V_WIDTH; // 從頭開始
         recordedChunks = [];
         const stream = canvas.captureStream(30);
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4', videoBitsPerSecond: 8000000 });
