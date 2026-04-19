@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 真實溢光版</title>
+    <title>白六 LED 跑馬燈 - 經典暈邊回歸版</title>
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
         html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; color: #fff; }
         body { display: flex; flex-direction: column; }
         #display-container { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; background: #000; }
-        canvas { aspect-ratio: 16 / 9; width: 100% !important; max-height: 100%; object-fit: contain; }
+        canvas { aspect-ratio: 16 / 9; width: 100% !important; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
         #download-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .modal { background: #222; padding: 30px; border-radius: 20px; text-align: center; max-width: 320px; border: 1px solid #444; }
         #controls { background: var(--panel-bg); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #333; overflow-y: auto; max-height: 55%; }
@@ -34,7 +34,7 @@
     <div id="download-overlay">
         <div class="modal">
             <h2 style="margin:0 0 10px 0; color:var(--accent-green);">錄製完成</h2>
-            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">再次下載</button>
+            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">下載影片</button>
             <button onclick="closeModal()" style="background:none; color:#666; border:none;">關閉</button>
         </div>
     </div>
@@ -108,8 +108,8 @@
 
     function renderBuffer() {
         const h = settings.density;
-        const fontSize = h * 0.98; 
-        const fontStr = `900 ${fontSize}px "PingFang TC", "Hiragino Sans GB", "Microsoft JhengHei", "Noto Sans TC", sans-serif`;
+        const fontSize = h * 0.95; // 稍微縮小一點點點，給邊緣半透明點留空間
+        const fontStr = `900 ${fontSize}px "PingFang TC", "Microsoft JhengHei", sans-serif`;
         octx.font = mctx.font = fontStr;
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
@@ -156,26 +156,21 @@
             for (let x = 0; x < offscreen.width; x++) {
                 const i = (y * offscreen.width + x) * 4;
                 const alpha = imgD[i + 3];
-                if (alpha > 120) { 
+                
+                // 核心關鍵：將判定門檻降低 (alpha > 20)，並套用原本的 rgba 渲染邏輯
+                if (alpha > 20) { 
                     const px = (x * step) + settings.offset, py = y * step;
                     if (px > -step && px < V_WIDTH) {
                         const r = imgD[i], g = imgD[i+1], b = imgD[i+2];
                         const isT = (maskD[i] > 200 && maskD[i+2] > 200 && maskD[i+1] < 50) && (Math.abs(r-g) < 15 && Math.abs(g-b) < 15);
                         
-                        const clr = isT ? `rgb(${targetColor.r},${targetColor.g},${targetColor.b})` : `rgb(${r},${g},${b})`;
-                        
-                        // ✨ 真正的光暈修正：使用 ShadowBlur
-                        ctx.save();
-                        ctx.fillStyle = clr;
-                        
-                        // 設定陰影參數 (細邊、變淺感)
-                        ctx.shadowBlur = step * 0.4; // 根據密度自動調整光暈範圍
-                        ctx.shadowColor = clr;
+                        // 使用 alpha/255 重現截圖中的偽暈邊感
+                        const aVal = alpha / 255;
+                        ctx.fillStyle = isT ? `rgba(${targetColor.r},${targetColor.g},${targetColor.b},${aVal})` : `rgba(${r},${g},${b},${aVal})`;
                         
                         ctx.beginPath();
                         ctx.arc(px + step/2, py + step/2, dotS/2, 0, Math.PI * 2);
                         ctx.fill();
-                        ctx.restore();
                     }
                 }
             }
@@ -211,7 +206,7 @@
         const blob = new Blob(recordedChunks, { type: 'video/mp4' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `LED_Glow_${Date.now()}.mp4`; a.click();
+        a.href = url; a.download = `LED_Marquee_${Date.now()}.mp4`; a.click();
         document.getElementById('manualDownloadBtn').onclick = () => { a.click(); };
         document.getElementById('download-overlay').style.display = 'flex';
     }
