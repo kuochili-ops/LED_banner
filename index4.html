@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED - 字體全載版</title>
+    <title>白六 LED - 字體強化版</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Kosugi+Maru&family=Kosugi&family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Potta+One&family=Zhi+Mang+Xing&family=Kosugi+Maru&family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -44,14 +44,14 @@
 </div>
 
 <div id="controls">
-    <div class="section-title">文字與字體</div>
+    <div class="section-title">文字內容與新字體</div>
     <div class="input-row">
         <input type="text" id="textInput" value="白六 LED 跑馬燈 ❤️ 🚁">
         <select id="fontSelect" onchange="changeFont()">
-            <option value='"PingFang TC", sans-serif'>預設極粗黑</option>
-            <option value='"Ma Shan Zheng", cursive'>毛筆行楷</option>
+            <option value='"Potta One", cursive'>日式布丁 (極粗推薦)</option>
+            <option value='"Zhi Mang Xing", cursive'>本墨草書 (毛筆)</option>
             <option value='"Kosugi Maru", sans-serif'>日式圓體</option>
-            <option value='"Kosugi", sans-serif'>日式黑體</option>
+            <option value='"PingFang TC", sans-serif'>預設極粗黑</option>
             <option value='"Noto Sans TC", sans-serif'>Noto 極黑</option>
         </select>
         <button class="btn" onclick="updateText()">更新</button>
@@ -83,29 +83,19 @@
     const V_WIDTH = 1280, V_HEIGHT = 720;
     let settings = { 
         text: "", density: 70, dotScale: 0.75, color: "#00ff00", speed: 20, offset: V_WIDTH,
-        img: null, imgScale: 1.9, imgX: 0, imgY: 0, font: '"PingFang TC", sans-serif'
+        img: null, imgScale: 1.9, imgX: 0, imgY: 0, font: '"Potta One", cursive'
     };
     
     const offscreen = document.createElement('canvas'), octx = offscreen.getContext('2d');
     const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d');
     let mediaRecorder, recordedChunks = [], isRecording = false;
 
-    // ✨ 核心修正：主動確保字體被下載並載入
     async function changeFont() {
         const fontName = document.getElementById('fontSelect').value;
         settings.font = fontName;
-        
-        // 主動告知瀏覽器：我需要這行文字的這款字體
-        try {
-            await document.fonts.load(`16px ${fontName}`, settings.text);
-        } catch (e) {}
-
+        try { await document.fonts.load(`16px ${fontName}`, settings.text); } catch (e) {}
         updateSettings();
-        
-        // 分段式重繪，解決中文字體包異步載入問題
-        setTimeout(renderBuffer, 100);
-        setTimeout(renderBuffer, 500);
-        setTimeout(renderBuffer, 1000);
+        setTimeout(renderBuffer, 300);
     }
 
     function handleImage(input) {
@@ -137,27 +127,17 @@
 
     function renderBuffer() {
         const h = settings.density;
-        const isDefaultFont = settings.font.includes("PingFang");
-        const fontSize = h * (isDefaultFont ? 0.95 : 0.85); 
-        const weight = isDefaultFont ? "900" : "normal"; 
-        const fontStr = `${weight} ${fontSize}px ${settings.font}`;
-        
+        const fontStr = `normal ${h * 0.85}px ${settings.font}`;
         octx.font = mctx.font = fontStr;
-        
-        // 測量寬度
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
-        if (settings.img) {
-            imgW = h * (settings.img.width / settings.img.height) * settings.imgScale;
-        }
-        
+        if (settings.img) imgW = h * (settings.img.width / settings.img.height) * settings.imgScale;
         let contentWidth = textMetrics.width + 300 + imgW + Math.abs(settings.imgX);
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
 
         octx.clearRect(0, 0, contentWidth, h);
         mctx.clearRect(0, 0, contentWidth, h);
-        
         octx.font = mctx.font = fontStr; 
         octx.textBaseline = mctx.textBaseline = "middle";
         
@@ -167,11 +147,8 @@
             octx.drawImage(settings.img, curX + settings.imgX, (h - drawH) / 2 + settings.imgY, imgW, drawH);
             curX += imgW + 100;
         }
-        
-        octx.fillStyle = "white"; 
-        octx.fillText(settings.text, curX, h / 2);
-        mctx.fillStyle = "#FF00FF"; 
-        mctx.fillText(settings.text, curX, h / 2);
+        octx.fillStyle = "white"; octx.fillText(settings.text, curX, h / 2);
+        mctx.fillStyle = "#FF00FF"; mctx.fillText(settings.text, curX, h / 2);
         canvas.width = V_WIDTH; canvas.height = V_HEIGHT; 
     }
 
@@ -225,25 +202,18 @@
         document.getElementById('recordBtn').classList.add('recording');
     }
 
-    function stopRecording() {
-        if (!isRecording) return;
-        mediaRecorder.stop();
-        isRecording = false;
-        document.getElementById('recordBtn').classList.remove('recording');
-    }
+    function stopRecording() { if (isRecording) { mediaRecorder.stop(); isRecording = false; document.getElementById('recordBtn').classList.remove('recording'); } }
 
     function exportVideo() {
         const blob = new Blob(recordedChunks, { type: 'video/mp4' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `LED_Style_${Date.now()}.mp4`; a.click();
+        a.href = url; a.download = `LED_Banner_${Date.now()}.mp4`; a.click();
         document.getElementById('manualDownloadBtn').onclick = () => { a.click(); };
         document.getElementById('download-overlay').style.display = 'flex';
     }
 
     function closeModal() { document.getElementById('download-overlay').style.display = 'none'; }
-    
-    // 初始化
     updateText(); draw();
 </script>
 </body>
