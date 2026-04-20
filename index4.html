@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED - 字體強化版</title>
+    <title>白六 LED - 字體全載版</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Kosugi+Maru&family=Kosugi&family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
@@ -44,7 +44,7 @@
 </div>
 
 <div id="controls">
-    <div class="section-title">文字內容與字體</div>
+    <div class="section-title">文字與字體</div>
     <div class="input-row">
         <input type="text" id="textInput" value="白六 LED 跑馬燈 ❤️ 🚁">
         <select id="fontSelect" onchange="changeFont()">
@@ -90,22 +90,23 @@
     const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d');
     let mediaRecorder, recordedChunks = [], isRecording = false;
 
-    // ✨ 字體強化：強制等待並重繪
-    function changeFont() {
-        settings.font = document.getElementById('fontSelect').value;
-        updateSettings();
-        // 連續重繪幾次，應對網路下載延遲
-        let attempts = 0;
-        const retry = setInterval(() => {
-            renderBuffer();
-            if (++attempts > 5) clearInterval(retry);
-        }, 300);
-    }
+    // ✨ 核心修正：主動確保字體被下載並載入
+    async function changeFont() {
+        const fontName = document.getElementById('fontSelect').value;
+        settings.font = fontName;
+        
+        // 主動告知瀏覽器：我需要這行文字的這款字體
+        try {
+            await document.fonts.load(`16px ${fontName}`, settings.text);
+        } catch (e) {}
 
-    // 監聽全局字體載入
-    document.fonts.onloadingdone = () => {
-        renderBuffer();
-    };
+        updateSettings();
+        
+        // 分段式重繪，解決中文字體包異步載入問題
+        setTimeout(renderBuffer, 100);
+        setTimeout(renderBuffer, 500);
+        setTimeout(renderBuffer, 1000);
+    }
 
     function handleImage(input) {
         if (input.files && input.files[0]) {
@@ -132,22 +133,25 @@
         renderBuffer();
     }
 
-    function updateText() { settings.text = document.getElementById('textInput').value; renderBuffer(); }
+    function updateText() { settings.text = document.getElementById('textInput').value; changeFont(); }
 
     function renderBuffer() {
         const h = settings.density;
         const isDefaultFont = settings.font.includes("PingFang");
-        const fontSize = h * (isDefaultFont ? 0.95 : 0.82); 
+        const fontSize = h * (isDefaultFont ? 0.95 : 0.85); 
         const weight = isDefaultFont ? "900" : "normal"; 
         const fontStr = `${weight} ${fontSize}px ${settings.font}`;
         
         octx.font = mctx.font = fontStr;
+        
+        // 測量寬度
         let textMetrics = octx.measureText(settings.text);
         let imgW = 0;
         if (settings.img) {
             imgW = h * (settings.img.width / settings.img.height) * settings.imgScale;
         }
-        let contentWidth = textMetrics.width + 250 + imgW + Math.abs(settings.imgX);
+        
+        let contentWidth = textMetrics.width + 300 + imgW + Math.abs(settings.imgX);
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
 
@@ -161,7 +165,7 @@
         if (settings.img) {
             const drawH = h * settings.imgScale;
             octx.drawImage(settings.img, curX + settings.imgX, (h - drawH) / 2 + settings.imgY, imgW, drawH);
-            curX += imgW + 80;
+            curX += imgW + 100;
         }
         
         octx.fillStyle = "white"; 
@@ -232,13 +236,14 @@
         const blob = new Blob(recordedChunks, { type: 'video/mp4' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `LED_Banner_${Date.now()}.mp4`; a.click();
+        a.href = url; a.download = `LED_Style_${Date.now()}.mp4`; a.click();
         document.getElementById('manualDownloadBtn').onclick = () => { a.click(); };
         document.getElementById('download-overlay').style.display = 'flex';
     }
 
     function closeModal() { document.getElementById('download-overlay').style.display = 'none'; }
     
+    // 初始化
     updateText(); draw();
 </script>
 </body>
