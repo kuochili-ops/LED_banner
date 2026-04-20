@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 字體旗艦版</title>
+    <title>白六 LED - 字體強化版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Kosugi+Maru&family=Kosugi&family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
@@ -45,7 +47,7 @@
     <div class="section-title">文字內容與字體</div>
     <div class="input-row">
         <input type="text" id="textInput" value="白六 LED 跑馬燈 ❤️ 🚁">
-        <select id="fontSelect" onchange="updateSettings()">
+        <select id="fontSelect" onchange="changeFont()">
             <option value='"PingFang TC", sans-serif'>預設極粗黑</option>
             <option value='"Ma Shan Zheng", cursive'>毛筆行楷</option>
             <option value='"Kosugi Maru", sans-serif'>日式圓體</option>
@@ -88,6 +90,23 @@
     const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d');
     let mediaRecorder, recordedChunks = [], isRecording = false;
 
+    // ✨ 字體強化：強制等待並重繪
+    function changeFont() {
+        settings.font = document.getElementById('fontSelect').value;
+        updateSettings();
+        // 連續重繪幾次，應對網路下載延遲
+        let attempts = 0;
+        const retry = setInterval(() => {
+            renderBuffer();
+            if (++attempts > 5) clearInterval(retry);
+        }, 300);
+    }
+
+    // 監聽全局字體載入
+    document.fonts.onloadingdone = () => {
+        renderBuffer();
+    };
+
     function handleImage(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
@@ -118,8 +137,8 @@
     function renderBuffer() {
         const h = settings.density;
         const isDefaultFont = settings.font.includes("PingFang");
-        const fontSize = h * (isDefaultFont ? 0.95 : 0.85); // 網路字體留多一點空間防止切到邊緣
-        const weight = isDefaultFont ? "900" : "normal"; // 萍方體鎖定 900，其他字體使用原本設計
+        const fontSize = h * (isDefaultFont ? 0.95 : 0.82); 
+        const weight = isDefaultFont ? "900" : "normal"; 
         const fontStr = `${weight} ${fontSize}px ${settings.font}`;
         
         octx.font = mctx.font = fontStr;
@@ -128,7 +147,7 @@
         if (settings.img) {
             imgW = h * (settings.img.width / settings.img.height) * settings.imgScale;
         }
-        let contentWidth = textMetrics.width + 200 + imgW + Math.abs(settings.imgX);
+        let contentWidth = textMetrics.width + 250 + imgW + Math.abs(settings.imgX);
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
 
@@ -142,7 +161,7 @@
         if (settings.img) {
             const drawH = h * settings.imgScale;
             octx.drawImage(settings.img, curX + settings.imgX, (h - drawH) / 2 + settings.imgY, imgW, drawH);
-            curX += imgW + 50;
+            curX += imgW + 80;
         }
         
         octx.fillStyle = "white"; 
@@ -213,15 +232,12 @@
         const blob = new Blob(recordedChunks, { type: 'video/mp4' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        a.href = url; a.download = `LED_Style_${Date.now()}.mp4`; a.click();
+        a.href = url; a.download = `LED_Banner_${Date.now()}.mp4`; a.click();
         document.getElementById('manualDownloadBtn').onclick = () => { a.click(); };
         document.getElementById('download-overlay').style.display = 'flex';
     }
 
     function closeModal() { document.getElementById('download-overlay').style.display = 'none'; }
-    
-    // 監聽字體載入事件，確保網路字體載入後重新渲染
-    document.fonts.ready.then(() => { renderBuffer(); });
     
     updateText(); draw();
 </script>
