@@ -3,67 +3,67 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>白六 LED 跑馬燈 - 質感暈邊強化版</title>
+    <title>index3 - LINE 專用合體版</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Potta+One&family=Zhi+Mang+Xing&family=Kosugi+Maru&family=Noto+Sans+TC:wght@900&display=swap" rel="stylesheet">
     <style>
         :root { --bg-color: #000; --panel-bg: #1a1a1a; --accent-blue: #007AFF; --accent-red: #ff3b30; --accent-green: #34c759; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "PingFang TC", "Microsoft JhengHei", sans-serif; color: #fff; }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #000; font-family: "PingFang TC", sans-serif; color: #fff; }
         body { display: flex; flex-direction: column; }
         #display-container { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; background: #000; }
-        canvas { aspect-ratio: 16 / 9; width: 100% !important; max-height: 100%; object-fit: contain; image-rendering: pixelated; }
+        canvas { aspect-ratio: 16 / 9; width: 100% !important; max-height: 100%; object-fit: contain; image-rendering: pixelated; border: 1px solid #333; }
         #download-overlay { display: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
         .modal { background: #222; padding: 30px; border-radius: 20px; text-align: center; max-width: 320px; border: 1px solid #444; }
-        #controls { background: var(--panel-bg); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #333; overflow-y: auto; max-height: 55%; }
-        @media (orientation: landscape) { #controls { display: none; } }
-        .section-title { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+        #controls { background: var(--panel-bg); padding: 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 12px; border-top: 1px solid #333; overflow-y: auto; max-height: 50%; }
         .input-row { display: flex; gap: 8px; align-items: center; }
-        input[type="text"] { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; font-size: 16px; outline: none; }
+        input[type="text"], select { flex: 1; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #222; color: white; font-size: 16px; outline: none; }
         .btn { padding: 10px 18px; border-radius: 10px; border: none; background: var(--accent-blue); color: white; font-weight: 600; cursor: pointer; font-size: 14px; }
-        #recordBtn { background: var(--accent-red); min-width: 100px; }
+        #recordBtn { background: var(--accent-red); min-width: 120px; }
         .recording { animation: pulse 1s infinite; background: #900 !important; }
         @keyframes pulse { 0% {opacity:1} 50% {opacity:0.5} 100% {opacity:1} }
         .settings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 15px; font-size: 11px; color: #aaa; }
         input[type="range"] { width: 100%; accent-color: var(--accent-blue); }
-        .image-tools { background: rgba(255,255,255,0.03); padding: 12px; border-radius: 12px; border: 1px dashed #444; }
+        .split-indicator { display: flex; height: 4px; border-radius: 2px; overflow: hidden; margin: 5px 0; }
+        .split-l { background: #555; width: 33.3%; }
+        .split-r { background: var(--accent-blue); width: 66.6%; }
     </style>
 </head>
 <body>
 
 <div id="display-container">
     <canvas id="ledCanvas"></canvas>
-    <div id="download-overlay">
-        <div class="modal">
-            <h2 style="margin:0 0 10px 0; color:var(--accent-green);">錄製完成</h2>
-            <p style="color:#aaa; font-size:14px; margin-bottom:20px;">影片已自動下載</p>
-            <button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">再次下載</button>
-            <button onclick="closeModal()" style="background:none; color:#666; border:none;">關閉</button>
-        </div>
-    </div>
+    <div id="download-overlay"><div class="modal"><h2 style="color:var(--accent-green);">製作完成</h2><button id="manualDownloadBtn" class="btn" style="width:100%; margin-bottom:12px; background:var(--accent-green); height:50px;">下載 LINE 專用影片</button><button onclick="closeModal()" style="background:none; color:#666; border:none;">關閉</button></div></div>
 </div>
 
 <div id="controls">
-    <div class="section-title">文字內容</div>
+    <div class="split-indicator"><div class="split-l"></div><div class="split-r"></div></div>
     <div class="input-row">
         <input type="text" id="textInput" value="白六 LED 跑馬燈 ❤️ 🚁">
+        <select id="fontSelect" onchange="changeFont()">
+            <option value='"Potta One", cursive'>日式布丁 (推薦)</option>
+            <option value='"Zhi Mang Xing", cursive'>本墨草書</option>
+            <option value='"Kosugi Maru", sans-serif'>日式圓體</option>
+            <option value='"PingFang TC", sans-serif'>極粗黑體</option>
+        </select>
         <button class="btn" onclick="updateText()">更新</button>
-        <button id="recordBtn" class="btn" onclick="startAutoRecording()">錄製製作</button>
     </div>
 
-    <div class="image-tools">
-        <div class="input-row" style="margin-bottom:10px;">
-            <label class="btn" style="flex:1; background:#333; text-align:center;">選擇圖片<input type="file" id="imageInput" accept="image/*" hidden onchange="handleImage(this)"></label>
-            <button class="btn" style="background:#222;" onclick="resetImage()">清除</button>
+    <div style="background: rgba(255,255,255,0.05); padding:10px; border-radius:12px;">
+        <div class="input-row" style="margin-bottom:8px;">
+            <label class="btn" style="flex:1; background:#333; text-align:center;">左側圖示<input type="file" id="imageInput" accept="image/*" hidden onchange="handleImage(this)"></label>
+            <button id="recordBtn" class="btn" onclick="startAutoRecording()">錄製合體影片</button>
         </div>
         <div class="settings-grid">
-            <div style="display:flex;flex-direction:column;"><label>圖片縮放</label><input type="range" id="imgScale" min="0.1" max="3" step="0.05" value="1.9" oninput="updateSettings()"></div>
-            <div style="display:flex;flex-direction:column;"><label>左右 (X)</label><input type="range" id="imgX" min="-300" max="300" value="0" oninput="updateSettings()"></div>
-            <div style="display:flex;flex-direction:column;"><label>上下 (Y)</label><input type="range" id="imgY" min="-150" max="150" value="0" oninput="updateSettings()"></div>
+            <div style="display:flex;flex-direction:column;"><label>圖片縮放</label><input type="range" id="imgScale" min="0.5" max="2" step="0.05" value="1.0" oninput="updateSettings()"></div>
+            <div style="display:flex;flex-direction:column;"><label>圖片位置</label><input type="range" id="imgY" min="-100" max="100" value="0" oninput="updateSettings()"></div>
         </div>
     </div>
 
     <div class="settings-grid">
         <div style="display:flex;flex-direction:column;"><label>速度</label><input type="range" id="speedRange" min="5" max="50" value="20" oninput="updateSettings()"></div>
-        <div style="display:flex;flex-direction:column;"><label>密度</label><input type="range" id="pixelRange" min="40" max="120" value="70" oninput="updateSettings()"></div>
+        <div style="display:flex;flex-direction:column;"><label>密度</label><input type="range" id="pixelRange" min="40" max="100" value="65" oninput="updateSettings()"></div>
         <div style="display:flex;flex-direction:column;"><label>顏色</label><input type="color" id="colorPicker" value="#00ff00" onchange="updateSettings()" style="width:100%;height:28px;background:none;border:none;"></div>
         <div style="display:flex;flex-direction:column;"><label>燈珠大小</label><input type="range" id="sizeRange" min="0.2" max="1" step="0.05" value="0.75" oninput="updateSettings()"></div>
     </div>
@@ -72,27 +72,35 @@
 <script>
     const canvas = document.getElementById('ledCanvas'), ctx = canvas.getContext('2d', { alpha: false });
     const V_WIDTH = 1280, V_HEIGHT = 720;
+    const LEFT_W = V_WIDTH / 3; // 1/3 左圖區域
+    
     let settings = { 
-        text: "", density: 70, dotScale: 0.75, color: "#00ff00", speed: 20, offset: V_WIDTH,
-        img: null, imgScale: 1.9, imgX: 0, imgY: 0
+        text: "", density: 65, dotScale: 0.75, color: "#00ff00", speed: 20, offset: V_WIDTH - LEFT_W,
+        img: null, imgScale: 1.0, imgY: 0, font: '"Potta One", cursive'
     };
     
     const offscreen = document.createElement('canvas'), octx = offscreen.getContext('2d');
     const maskCanvas = document.createElement('canvas'), mctx = maskCanvas.getContext('2d');
     let mediaRecorder, recordedChunks = [], isRecording = false;
 
+    async function changeFont() {
+        settings.font = document.getElementById('fontSelect').value;
+        try { await document.fonts.load(`16px ${settings.font}`, settings.text); } catch (e) {}
+        renderBuffer();
+        setTimeout(renderBuffer, 500); 
+    }
+
     function handleImage(input) {
         if (input.files && input.files[0]) {
             const reader = new FileReader();
             reader.onload = e => {
                 const img = new Image();
-                img.onload = () => { settings.img = img; renderBuffer(); settings.offset = V_WIDTH; };
+                img.onload = () => { settings.img = img; renderBuffer(); };
                 img.src = e.target.result;
             };
             reader.readAsDataURL(input.files[0]);
         }
     }
-    function resetImage() { settings.img = null; renderBuffer(); }
 
     function updateSettings() {
         settings.speed = parseInt(document.getElementById('speedRange').value);
@@ -100,45 +108,77 @@
         settings.dotScale = parseFloat(document.getElementById('sizeRange').value);
         settings.color = document.getElementById('colorPicker').value;
         settings.imgScale = parseFloat(document.getElementById('imgScale').value);
-        settings.imgX = parseInt(document.getElementById('imgX').value);
         settings.imgY = parseInt(document.getElementById('imgY').value);
         renderBuffer();
     }
 
-    function updateText() { settings.text = document.getElementById('textInput').value; renderBuffer(); }
+    function updateText() { settings.text = document.getElementById('textInput').value; changeFont(); }
 
     function renderBuffer() {
         const h = settings.density;
-        const fontSize = h * 0.98; 
-        const fontStr = `900 ${fontSize}px "PingFang TC", "Hiragino Sans GB", "Microsoft JhengHei", "Noto Sans TC", sans-serif`;
+        const fontStr = `normal ${h * 0.82}px ${settings.font}`;
         octx.font = mctx.font = fontStr;
         let textMetrics = octx.measureText(settings.text);
-        let imgW = 0;
-        if (settings.img) {
-            imgW = h * (settings.img.width / settings.img.height) * settings.imgScale;
-        }
-        let contentWidth = textMetrics.width + 120 + imgW + Math.abs(settings.imgX);
+        
+        let contentWidth = textMetrics.width + 200;
         offscreen.width = maskCanvas.width = contentWidth;
         offscreen.height = maskCanvas.height = h;
 
         octx.clearRect(0, 0, contentWidth, h);
         mctx.clearRect(0, 0, contentWidth, h);
-        
         octx.font = mctx.font = fontStr; 
         octx.textBaseline = mctx.textBaseline = "middle";
         
-        let curX = 50;
+        octx.fillStyle = "white"; octx.fillText(settings.text, 50, h / 2);
+        mctx.fillStyle = "#FF00FF"; mctx.fillText(settings.text, 50, h / 2);
+        canvas.width = V_WIDTH; canvas.height = V_HEIGHT; 
+    }
+
+    function draw() {
+        ctx.fillStyle = "#000"; ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+        const step = V_HEIGHT / settings.density, dotS = step * settings.dotScale;
+        const targetColor = hexToRgb(settings.color);
+
+        // 1. 繪製左側 1/3 圖示區域
         if (settings.img) {
-            const drawH = h * settings.imgScale;
-            octx.drawImage(settings.img, curX + settings.imgX, (h - drawH) / 2 + settings.imgY, imgW, drawH);
-            curX += imgW + 50;
+            const aspect = settings.img.width / settings.img.height;
+            const drawW = LEFT_W * settings.imgScale;
+            const drawH = drawW / aspect;
+            ctx.save();
+            ctx.beginPath(); ctx.rect(0, 0, LEFT_W, V_HEIGHT); ctx.clip();
+            ctx.drawImage(settings.img, (LEFT_W - drawW)/2, (V_HEIGHT - drawH)/2 + settings.imgY, drawW, drawH);
+            ctx.restore();
         }
         
-        octx.fillStyle = "white"; 
-        octx.fillText(settings.text, curX, h / 2);
-        mctx.fillStyle = "#FF00FF"; 
-        mctx.fillText(settings.text, curX, h / 2);
-        canvas.width = V_WIDTH; canvas.height = V_HEIGHT; 
+        // 分割線
+        ctx.fillStyle = "#222"; ctx.fillRect(LEFT_W - 2, 0, 4, V_HEIGHT);
+
+        // 2. 繪製右側 2/3 跑馬燈
+        const imgD = octx.getImageData(0, 0, offscreen.width, offscreen.height).data;
+        const maskD = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
+
+        for (let y = 0; y < offscreen.height; y++) {
+            for (let x = 0; x < offscreen.width; x++) {
+                const i = (y * offscreen.width + x) * 4;
+                const alpha = imgD[i + 3];
+                if (alpha > 20) { 
+                    const px = (x * step) + settings.offset + LEFT_W, py = y * step;
+                    // 只在右側 2/3 區域內顯示
+                    if (px >= LEFT_W && px < V_WIDTH) {
+                        const r = imgD[i], g = imgD[i+1], b = imgD[i+2];
+                        const isT = (maskD[i] > 200 && maskD[i+2] > 200 && maskD[i+1] < 50) && (Math.abs(r-g) < 15 && Math.abs(g-b) < 15);
+                        const aVal = alpha / 255;
+                        ctx.fillStyle = isT ? `rgba(${targetColor.r},${targetColor.g},${targetColor.b},${aVal})` : `rgba(${r},${g},${b},${aVal})`;
+                        ctx.beginPath(); ctx.arc(px + step/2, py + step/2, dotS/2, 0, Math.PI * 2); ctx.fill();
+                    }
+                }
+            }
+        }
+
+        settings.offset -= settings.speed;
+        if (isRecording && settings.offset < -(offscreen.width * step)) stopRecording();
+        if (settings.offset < -(offscreen.width * step)) settings.offset = V_WIDTH - LEFT_W;
+        requestAnimationFrame(draw);
     }
 
     function hexToRgb(hex) {
@@ -146,57 +186,9 @@
         return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
     }
 
-    function draw() {
-        ctx.fillStyle = "#000"; ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
-        const imgD = octx.getImageData(0, 0, offscreen.width, offscreen.height).data;
-        const maskD = mctx.getImageData(0, 0, maskCanvas.width, maskCanvas.height).data;
-        const step = V_HEIGHT / settings.density, dotS = step * settings.dotScale;
-        const targetColor = hexToRgb(settings.color);
-
-        for (let y = 0; y < offscreen.height; y++) {
-            for (let x = 0; x < offscreen.width; x++) {
-                const i = (y * offscreen.width + x) * 4;
-                const alpha = imgD[i + 3];
-                if (alpha > 120) { 
-                    const px = (x * step) + settings.offset, py = y * step;
-                    if (px > -step && px < V_WIDTH) {
-                        const r = imgD[i], g = imgD[i+1], b = imgD[i+2];
-                        const isT = (maskD[i] > 200 && maskD[i+2] > 200 && maskD[i+1] < 50) && (Math.abs(r-g) < 15 && Math.abs(g-b) < 15);
-                        
-                        const clr = isT ? `rgb(${targetColor.r},${targetColor.g},${targetColor.b})` : `rgb(${r},${g},${b})`;
-                        
-                        // ✨ 暈邊強化邏輯
-                        // 1. 底層廣域淺暈 (半徑較大，透明度較低)
-                        ctx.fillStyle = clr.replace('rgb', 'rgba').replace(')', ', 0.2)');
-                        ctx.beginPath();
-                        ctx.arc(px + step/2, py + step/2, dotS * 0.9, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        // 2. 中層亮色細邊 (半徑稍大於核心，透明度較高)
-                        ctx.fillStyle = clr.replace('rgb', 'rgba').replace(')', ', 0.4)');
-                        ctx.beginPath();
-                        ctx.arc(px + step/2, py + step/2, dotS * 0.65, 0, Math.PI * 2);
-                        ctx.fill();
-
-                        // 3. 核心燈珠層
-                        ctx.fillStyle = clr;
-                        ctx.beginPath();
-                        ctx.arc(px + step/2, py + step/2, dotS/2, 0, Math.PI * 2);
-                        ctx.fill();
-                    }
-                }
-            }
-        }
-        settings.offset -= settings.speed;
-        if (isRecording && settings.offset < -(offscreen.width * step)) stopRecording();
-        if (settings.offset < -(offscreen.width * step)) settings.offset = V_WIDTH;
-        requestAnimationFrame(draw);
-    }
-
     function startAutoRecording() {
         if (isRecording) return;
-        updateText();
-        settings.offset = V_WIDTH;
+        settings.offset = V_WIDTH - LEFT_W;
         recordedChunks = [];
         const stream = canvas.captureStream(30);
         mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/mp4', videoBitsPerSecond: 8000000 });
@@ -205,27 +197,17 @@
         mediaRecorder.start();
         isRecording = true;
         document.getElementById('recordBtn').classList.add('recording');
-        document.getElementById('recordBtn').innerText = "錄製中...";
     }
 
-    function stopRecording() {
-        if (!isRecording) return;
-        mediaRecorder.stop();
-        isRecording = false;
-        document.getElementById('recordBtn').classList.remove('recording');
-        document.getElementById('recordBtn').innerText = "錄製製作";
-    }
-
+    function stopRecording() { if (isRecording) { mediaRecorder.stop(); isRecording = false; document.getElementById('recordBtn').classList.remove('recording'); } }
     function exportVideo() {
         const blob = new Blob(recordedChunks, { type: 'video/mp4' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url; a.download = `白六_LED_${Date.now()}.mp4`; a.click();
-        document.getElementById('manualDownloadBtn').onclick = () => { a.click(); };
+        document.getElementById('manualDownloadBtn').onclick = () => { const a = document.createElement('a'); a.href = url; a.download = `LINE_Banner_${Date.now()}.mp4`; a.click(); };
         document.getElementById('download-overlay').style.display = 'flex';
     }
-
     function closeModal() { document.getElementById('download-overlay').style.display = 'none'; }
+
     updateText(); draw();
 </script>
 </body>
